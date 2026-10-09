@@ -13,7 +13,7 @@
     .top-actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
     .btn { padding:7px 11px; border-radius:8px; border:1px solid transparent; font-size:0.8rem; font-weight:600; cursor:pointer; font-family:inherit; }
     .btn-save { background:var(--success); color:#fff; }
-    .btn-link { background:var(--primary); color:#fff; }
+    .btn-share { background:var(--primary); color:#fff; }
     .btn-sub { background:#f1f5f9; color:#334155; border-color:var(--border); }
     .btn-del { background:#fee2e2; color:#ef4444; }
     
@@ -99,7 +99,7 @@
     .modal-title { display:flex; justify-content:space-between; font-weight:700; margin-bottom:12px; }
     .form-item { margin-bottom:10px; }
     .form-item label { display:block; font-size:0.72rem; font-weight:600; color:var(--muted); margin-bottom:3px; }
-    .form-item input, .form-item select { width:100%; padding:8px 10px; border-radius:7px; border:1px solid var(--border); font-family:inherit; font-size:0.85rem; }
+    .form-item input, .form-item select, .form-item textarea { width:100%; padding:8px 10px; border-radius:7px; border:1px solid var(--border); font-family:inherit; font-size:0.85rem; }
     .choice-list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
     .choice-item { padding:10px; border-radius:8px; border:1px solid var(--border); background:#f8fafc; text-align:left; cursor:pointer; display:flex; gap:8px; align-items:center; }
     .choice-parent { background:#fefce8; border-color:#fde047; }
@@ -108,13 +108,12 @@
 <body>
 
   <header>
-    <div class="brand">🌳 Cây Gia Phả Dòng Họ Lâm</div>
+    <div class="brand">🌳 Gia Phả Họ Lâm</div>
     <div class="top-actions">
-      <button class="btn btn-save" onclick="saveData(true)">💾 LƯU DỮ LIỆU</button>
-      <button class="btn btn-link" onclick="shareLink()">🔗 Link Sửa Chung</button>
-      <button class="btn btn-sub" onclick="changePassPrompt()">🔑 Đổi Mật Mã</button>
-      <button class="btn btn-sub" onclick="exportJSON()">📥 Xuất File</button>
-      <label class="btn btn-sub" style="margin:0;cursor:pointer;">📤 Nhập File<input type="file" id="inpFile" accept=".json" style="display:none;" onchange="importJSON(event)"></label>
+      <button class="btn btn-save" onclick="saveData(true)">💾 LƯU MÁY</button>
+      <button class="btn btn-share" onclick="copyDataCode()">📋 SAO CHÉP MÃ</button>
+      <button class="btn btn-sub" onclick="openImportCodeModal()">📥 DÁN MÃ VÀO</button>
+      <button class="btn btn-sub" onclick="exportJSON()">📁 Xuất Tệp</button>
       <button class="btn btn-del" onclick="resetAll()">🗑️ Xóa</button>
     </div>
   </header>
@@ -127,6 +126,19 @@
     <button class="zoom-btn" onclick="adjustZoom(-0.15)">➖</button>
     <span class="zoom-text" id="zoomVal" onclick="resetZoom()">100%</span>
     <button class="zoom-btn" onclick="adjustZoom(0.15)">➕</button>
+  </div>
+
+  <!-- Hộp thoại Dán Mã Dữ Liệu -->
+  <div class="modal" id="modalImportCode">
+    <div class="modal-card">
+      <div class="modal-title"><span>Dán Mã Dữ Liệu Gia Phả</span><button onclick="closeMod('modalImportCode')" style="border:none;background:none;font-size:1.1rem;cursor:pointer;">✕</button></div>
+      <p style="font-size:0.75rem; color:#64748b; margin-bottom:8px;">Dán đoạn mã được người thân gửi qua Zalo vào khung dưới đây:</p>
+      <textarea id="importCodeInput" rows="6" placeholder="Dán mã vào đây..."></textarea>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button type="button" class="btn btn-share" style="flex:1;padding:9px;" onclick="applyImportCode()">Nạp Cây Gia Phả</button>
+        <button type="button" class="btn btn-sub" onclick="closeMod('modalImportCode')">Hủy</button>
+      </div>
+    </div>
   </div>
 
   <div class="modal" id="modalChoice">
@@ -151,84 +163,38 @@
           <div class="form-item" style="flex:1;"><label>Năm sinh</label><input type="text" id="fYear" placeholder="1965"></div>
         </div>
         <div class="form-item"><label>Liên hệ (Zalo / FB)</label><input type="text" id="fContact" placeholder="Số Zalo hoặc link FB"></div>
-        <div class="form-item"><label>Ảnh đại diện (Tự động nén siêu nhẹ)</label><input type="file" id="fImg" accept="image/*" onchange="compressAndPreviewImg(event)"><img id="imgPrev" style="width:36px;height:36px;border-radius:50%;display:none;margin-top:6px;object-fit:cover;"></div>
-        <div style="display:flex;gap:8px;margin-top:12px;"><button type="submit" class="btn btn-link" style="flex:1;padding:9px;">Lưu</button><button type="button" class="btn btn-sub" onclick="closeMod('modalForm')">Hủy</button></div>
+        <div class="form-item"><label>Ảnh đại diện (Nén siêu nhẹ)</label><input type="file" id="fImg" accept="image/*" onchange="compressAndPreviewImg(event)"><img id="imgPrev" style="width:36px;height:36px;border-radius:50%;display:none;margin-top:6px;object-fit:cover;"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;"><button type="submit" class="btn btn-share" style="flex:1;padding:9px;">Lưu</button><button type="button" class="btn btn-sub" onclick="closeMod('modalForm')">Hủy</button></div>
       </form>
     </div>
   </div>
 
   <script>
-    const defaultFamilyTree = {
-      id: "root_lai",
+    // Dữ liệu gốc họ Lâm luôn sẵn sàng hiển thị
+    const baseTree = {
+      id: "lai_01",
       name: "Lâm Thành Lai",
       gender: "male",
       year: "Đã mất",
       contact: "",
       avatar: "",
       spouse: {
-        id: "sp_dai",
+        id: "dai_02",
         name: "Diệp Thị Dai",
         gender: "female",
-        year: "",
+        year: "Thành viên",
         contact: "",
         avatar: ""
       },
       children: [
-        { id: "c_co", name: "Lâm Thành Cơ", gender: "male", year: "", contact: "", avatar: "", children: [] },
-        { id: "c_nha", name: "Lâm Thành Nhã", gender: "male", year: "", contact: "", avatar: "", children: [] }
+        { id: "co_03", name: "Lâm Thành Cơ", gender: "male", year: "", contact: "", avatar: "", children: [] },
+        { id: "nha_04", name: "Lâm Thành Nhã", gender: "male", year: "Thành viên", contact: "", avatar: "", children: [] }
       ]
     };
 
     let tree = null, currTarget = null, tempAva = '';
-    let defaultPass = "123456";
     let scale = 1.0;
-    const STORAGE_KEY = 'giapha_holam_safe_v3';
-
-    // Mã hóa và giải mã an toàn tuyệt đối cho tiếng Việt có dấu
-    function safeEncode(str) {
-      return encodeURIComponent(btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
-        return String.fromCharCode('0x' + p1);
-      })));
-    }
-
-    function safeDecode(encoded) {
-      try {
-        let dec = decodeURIComponent(encoded);
-        return decodeURIComponent(Array.prototype.map.call(atob(dec), function(c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-      } catch (e) {
-        return null;
-      }
-    }
-
-    function getStoredPass() { return localStorage.getItem('family_pass') || defaultPass; }
-
-    window.addEventListener('load', () => {
-      let auth = sessionStorage.getItem('is_auth');
-      if (!auth) {
-        let entered = prompt("🔒 Nhập mật mã dòng họ để truy cập (Mặc định: 123456):");
-        while (entered !== getStoredPass()) {
-          if (entered === null) {
-            document.body.innerHTML = "<h3 style='text-align:center;margin-top:80px;'>Vui lòng tải lại trang và nhập mật mã để truy cập.</h3>";
-            return;
-          }
-          entered = prompt("❌ Mật khẩu không đúng! Vui lòng nhập lại:");
-        }
-        sessionStorage.setItem('is_auth', 'true');
-      }
-      initTree();
-    });
-
-    function changePassPrompt() {
-      const old = prompt('Nhập mật mã hiện tại:');
-      if (old !== getStoredPass()) { alert('Mật khẩu cũ không đúng!'); return; }
-      const newP = prompt('Nhập mật mã mới muốn đổi:');
-      if (newP && newP.trim() !== '') {
-        localStorage.setItem('family_pass', newP.trim());
-        alert('Đã đổi mật mã thành công!');
-      }
-    }
+    const STORAGE_KEY = 'giapha_lam_fixed_v4';
 
     function adjustZoom(delta) {
       scale = Math.min(Math.max(0.15, scale + delta), 2.5);
@@ -243,35 +209,22 @@
       document.getElementById('zoomVal').innerText = Math.round(scale * 100) + '%';
     }
 
+    window.addEventListener('DOMContentLoaded', () => {
+      initTree();
+    });
+
     function initTree() {
-      // 1. Đọc dữ liệu từ URL một cách an toàn
+      // Đọc từ bộ nhớ máy
       try {
-        const p = new URLSearchParams(window.location.search).get('data');
-        if (p) {
-          const raw = safeDecode(p);
-          if (raw) {
-            tree = JSON.parse(raw);
-            saveData(false);
-          }
-        }
-      } catch(err) {
-        console.error("Lỗi đọc URL:", err);
-      }
+        const s = localStorage.getItem(STORAGE_KEY);
+        if (s) { tree = JSON.parse(s); }
+      } catch(e) {}
 
-      // 2. Nếu không có URL hoặc URL lỗi, nạp từ bộ nhớ máy
+      // Nếu chưa có, lấy dữ liệu gốc của cụ Lâm Thành Lai
       if (!tree) {
-        try {
-          const s = localStorage.getItem(STORAGE_KEY);
-          if (s) { tree = JSON.parse(s); }
-        } catch(e){}
-      }
-
-      // 3. Nếu vẫn trống, tải dữ liệu gốc mặc định (nhánh cụ Lâm Thành Lai)
-      if (!tree) {
-        tree = defaultFamilyTree;
+        tree = baseTree;
         saveData(false);
       }
-
       draw();
     }
 
@@ -304,14 +257,14 @@
 
     function makeCard(n, isSpouse = false) {
       const d = document.createElement('div'); d.className = `card ${n.gender || 'male'}`;
-      const ava = n.avatar || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+      const ava = n.avatar || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
       let cont = n.contact ? `<div class="c-contact">${n.contact}</div>` : '';
       d.innerHTML = `
         <div class="card-head">
           <img class="ava" src="${ava}">
           <div style="flex:1;overflow:hidden;">
             <div class="c-name">${n.name}</div>
-            <div class="c-year">${n.year ? 'Sinh: ' + n.year : 'Thành viên'}</div>
+            <div class="c-year">${n.year ? n.year : 'Thành viên'}</div>
             ${cont}
           </div>
         </div>
@@ -439,22 +392,47 @@
           localStorage.setItem(STORAGE_KEY, JSON.stringify(tree)); 
           if (showAlert) alert('✅ Đã lưu dữ liệu vào máy thành công!');
         } catch (err) {
-          alert('Bộ nhớ đầy, hãy dùng tính năng Xuất File để lưu!');
+          alert('Bộ nhớ đầy, hãy dùng tính năng Xuất Tệp để lưu!');
         }
       }
     }
 
-    function shareLink() {
+    // SAO CHÉP MÃ GIA PHẢ: Gửi qua Zalo an toàn tuyệt đối
+    function copyDataCode() {
       if (!tree) { alert('Chưa có thông tin!'); return; }
       try {
-        const jsonStr = JSON.stringify(tree);
-        const encoded = safeEncode(jsonStr);
-        const u = window.location.origin + window.location.pathname + '?data=' + encoded;
-        navigator.clipboard.writeText(u).then(() => {
-          alert('✅ Đã sao chép link sửa chung!\n\nBạn hãy gửi link này qua Zalo. Người nhận mở ra sẽ xem được ngay lập tức.');
-        }).catch(() => prompt('Sao chép link này:', u));
-      } catch(e) { 
-        alert('Dữ liệu cây quá lớn để gửi qua link! Hãy dùng nút [Xuất File] gửi qua Zalo.'); 
+        const code = JSON.stringify(tree);
+        navigator.clipboard.writeText(code).then(() => {
+          alert('✅ ĐÃ SAO CHÉP MÃ DỮ LIỆU!\n\nBạn hãy mở Zalo và dán đoạn mã này gửi cho người thân.\nNgười nhận chỉ cần bấm [📥 DÁN MÃ VÀO] trên web là xem được ngay!');
+        }).catch(() => {
+          prompt('Sao chép toàn bộ mã trong ô này gửi qua Zalo:', code);
+        });
+      } catch(e) {
+        alert('Lỗi sao chép mã!');
+      }
+    }
+
+    function openImportCodeModal() {
+      document.getElementById('importCodeInput').value = '';
+      openMod('modalImportCode');
+    }
+
+    function applyImportCode() {
+      const val = document.getElementById('importCodeInput').value.trim();
+      if (!val) { alert('Vui lòng dán mã dữ liệu vào khung!'); return; }
+      try {
+        const parsed = JSON.parse(val);
+        if (parsed && parsed.name) {
+          tree = parsed;
+          saveData(false);
+          draw();
+          closeMod('modalImportCode');
+          alert('✅ ĐÃ NẠP CÂY GIA PHẢ THÀNH CÔNG!');
+        } else {
+          alert('Mã không hợp lệ!');
+        }
+      } catch(e) {
+        alert('Đoạn mã bị thiếu hoặc dán sai! Vui lòng kiểm tra lại.');
       }
     }
 
@@ -466,24 +444,9 @@
       document.body.appendChild(a); a.click(); a.remove();
     }
 
-    function importJSON(e) {
-      const f = e.target.files[0];
-      if (!f) return;
-      const rd = new FileReader();
-      rd.onload = function(x) {
-        try { 
-          tree = JSON.parse(x.target.result); 
-          saveData(false);
-          draw(); 
-          alert('✅ Đã nhập dữ liệu thành công!'); 
-        } catch(err) { alert('Lỗi: File dữ liệu không đúng định dạng!'); }
-      };
-      rd.readAsText(f);
-    }
-
     function resetAll() {
-      if (confirm('Bạn có chắc muốn xóa hết để làm lại từ đầu?')) {
-        tree = null; 
+      if (confirm('Khôi phục lại nhánh gốc họ Lâm?')) {
+        tree = JSON.parse(JSON.stringify(baseTree)); 
         localStorage.removeItem(STORAGE_KEY); 
         draw();
       }
