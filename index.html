@@ -27,7 +27,7 @@
       background-image:radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
       background-size:20px 20px;
       position:relative;
-      touch-action:none; /* Để JS tự xử lý vuốt 2 ngón tay mượt mà */
+      touch-action: pan-x pan-y;
       cursor: grab;
     }
     #canvas:active { cursor: grabbing; }
@@ -37,6 +37,7 @@
       display: inline-block;
       margin: auto;
       will-change: transform;
+      transition: transform 0.05s ease-out;
     }
     
     /* Bảng điều khiển thu phóng nổi */
@@ -52,25 +53,26 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
       z-index: 50;
       backdrop-filter: blur(4px);
     }
     .zoom-btn {
-      width: 34px;
-      height: 34px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: #f1f5f9;
       border: 1px solid var(--border);
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       font-weight: bold;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      color: #1e293b;
     }
     .zoom-btn:active { background: #e2e8f0; }
-    .zoom-text { font-size: 0.8rem; font-weight: 700; min-width: 45px; text-align: center; }
+    .zoom-text { font-size: 0.82rem; font-weight: 700; min-width: 48px; text-align: center; cursor: pointer; }
 
     .tree, .tree ul { display:flex; justify-content:center; padding-top:24px; position:relative; list-style-type:none; }
     .tree li { float:left; text-align:center; list-style-type:none; position:relative; padding:24px 12px 10px 12px; }
@@ -97,6 +99,7 @@
     .btn-action { background:none; border:none; font-size:0.72rem; color:var(--muted); cursor:pointer; }
     .empty { display:flex; align-items:center; justify-content:center; margin:80px auto; }
     .btn-root { background:var(--primary); color:#fff; border:none; padding:13px 22px; border-radius:12px; font-size:0.95rem; font-weight:700; cursor:pointer; }
+    
     .modal { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:100; padding:14px; backdrop-filter:blur(3px); }
     .modal.active { display:flex; }
     .modal-card { background:#fff; border-radius:14px; width:100%; max-width:400px; padding:18px; max-height:90vh; overflow-y:auto; }
@@ -107,19 +110,58 @@
     .choice-list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
     .choice-item { padding:10px; border-radius:8px; border:1px solid var(--border); background:#f8fafc; text-align:left; cursor:pointer; display:flex; gap:8px; align-items:center; }
     .choice-parent { background:#fefce8; border-color:#fde047; }
-    #lockScreen { position:fixed; inset:0; background:#0f172a; z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; }
-    .lock-box { background:#fff; border-radius:16px; padding:24px; width:100%; max-width:340px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.2); }
+    
+    /* Màn hình khóa đăng nhập */
+    #lockScreen { 
+      position:fixed; 
+      inset:0; 
+      background:#0f172a; 
+      z-index:99999; 
+      display:flex; 
+      align-items:center; 
+      justify-content:center; 
+      padding:20px; 
+      pointer-events: auto;
+    }
+    .lock-box { 
+      background:#fff; 
+      border-radius:16px; 
+      padding:24px; 
+      width:100%; 
+      max-width:340px; 
+      text-align:center; 
+      box-shadow:0 10px 25px rgba(0,0,0,0.25); 
+    }
+    .lock-btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 0.95rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .lock-btn:active { background: #1d4ed8; }
   </style>
 </head>
 <body>
+
+  <!-- Khóa Mật Khẩu -->
   <div id="lockScreen">
     <div class="lock-box">
-      <div style="font-size:2.5rem; margin-bottom:8px;">🔒</div>
-      <h3 style="margin-bottom:6px; font-size:1.15rem;">Bảo Mật Gia Phả</h3>
+      <div style="font-size:2.6rem; margin-bottom:8px;">🔒</div>
+      <h3 style="margin-bottom:6px; font-size:1.15rem; color:#0f172a;">Bảo Mật Gia Phả</h3>
       <p style="font-size:0.8rem; color:#64748b; margin-bottom:16px;">Vui lòng nhập mật mã dòng họ để truy cập</p>
-      <input type="password" id="passInput" placeholder="Nhập mật khẩu..." style="width:100%; padding:10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:1rem; text-align:center; margin-bottom:12px; outline:none;">
-      <button class="btn btn-link" onclick="checkPass()" style="width:100%; padding:10px; font-size:0.9rem; justify-content:center;">Mở Khóa</button>
-      <div id="passErr" style="color:#ef4444; font-size:0.75rem; margin-top:8px; display:none;">Mật khẩu không chính xác!</div>
+      
+      <form onsubmit="handlePassSubmit(event)">
+        <input type="password" id="passInput" placeholder="Nhập mật khẩu..." autocomplete="current-password"
+               style="width:100%; padding:11px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:1rem; text-align:center; margin-bottom:12px; outline:none;">
+        <button type="submit" class="lock-btn" id="btnUnlock">Mở Khóa</button>
+      </form>
+
+      <div id="passErr" style="color:#ef4444; font-size:0.8rem; margin-top:10px; display:none; font-weight:600;">Mật khẩu không chính xác!</div>
     </div>
   </div>
 
@@ -139,10 +181,10 @@
     <div class="tree-box" id="treeBox"></div>
   </main>
 
-  <!-- Thanh điều khiển thu nhỏ/phóng to ở giữa mép dưới -->
+  <!-- Thanh điều khiển thu nhỏ/phóng to -->
   <div class="zoom-bar">
     <button class="zoom-btn" onclick="adjustZoom(-0.15)">➖</button>
-    <span class="zoom-text" id="zoomVal" onclick="resetZoom()" title="Bấm để về 100%">100%</span>
+    <span class="zoom-text" id="zoomVal" onclick="resetZoom()" title="Chạm để về 100%">100%</span>
     <button class="zoom-btn" onclick="adjustZoom(0.15)">➕</button>
   </div>
 
@@ -181,26 +223,44 @@
     let initialDist = 0;
     let initialScale = 1.0;
 
-    // Xử lý vuốt chụm 2 ngón tay thu nhỏ/phóng to mượt mà
+    // Xử lý mở khóa
+    function getStoredPass(){ return localStorage.getItem('family_pass') || defaultPass; }
+
+    function handlePassSubmit(e) {
+      if (e) e.preventDefault();
+      const val = document.getElementById('passInput').value;
+      if (val === getStoredPass()) {
+        document.getElementById('lockScreen').style.display = 'none';
+        initTree();
+      } else {
+        document.getElementById('passErr').style.display = 'block';
+      }
+    }
+
+    function changePassPrompt(){
+      const old=prompt('Nhập mật mã hiện tại:');
+      if(old!==getStoredPass()){alert('Mật khẩu cũ không đúng!');return;}
+      const newP=prompt('Nhập mật mã mới bạn muốn đổi:');
+      if(newP&&newP.trim()!==''){localStorage.setItem('family_pass',newP.trim());alert('Đã đổi mật mã thành công!');}
+    }
+
+    // Thu phóng 2 ngón tay trên canvas
     const canvas = document.getElementById('canvas');
     canvas.addEventListener('touchstart', (e) => {
       if (e.touches.length === 2) {
         initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
         initialScale = scale;
       }
-    }, { passive: false });
+    }, { passive: true });
 
     canvas.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
+      if (e.touches.length === 2 && initialDist > 0) {
         const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-        if (initialDist > 0) {
-          const factor = dist / initialDist;
-          scale = Math.min(Math.max(0.15, initialScale * factor), 2.5);
-          applyZoom();
-        }
+        const factor = dist / initialDist;
+        scale = Math.min(Math.max(0.15, initialScale * factor), 2.5);
+        applyZoom();
       }
-    }, { passive: false });
+    }, { passive: true });
 
     function adjustZoom(delta) {
       scale = Math.min(Math.max(0.15, scale + delta), 2.5);
@@ -215,18 +275,6 @@
       document.getElementById('zoomVal').innerText = Math.round(scale * 100) + '%';
     }
 
-    function getStoredPass(){return localStorage.getItem('family_pass')||defaultPass;}
-    function checkPass(){
-      const val=document.getElementById('passInput').value;
-      if(val===getStoredPass()){document.getElementById('lockScreen').style.display='none';initTree();}
-      else{document.getElementById('passErr').style.display='block';}
-    }
-    function changePassPrompt(){
-      const old=prompt('Nhập mật mã hiện tại:');
-      if(old!==getStoredPass()){alert('Mật khẩu cũ không đúng!');return;}
-      const newP=prompt('Nhập mật mã mới bạn muốn đổi:');
-      if(newP&&newP.trim()!==''){localStorage.setItem('family_pass',newP.trim());alert('Đã đổi mật mã thành công!');}
-    }
     function initTree(){
       const p=new URLSearchParams(window.location.search).get('data');
       if(p){try{tree=JSON.parse(decodeURIComponent(escape(atob(p))));}catch(e){}}
