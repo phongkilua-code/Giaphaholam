@@ -19,7 +19,7 @@
     #canvas { flex:1; overflow:auto; padding:40px 16px; display:flex; justify-content:center; align-items:flex-start; background-image:radial-gradient(#cbd5e1 1px, transparent 1px); background-size:20px 20px; }
     .tree-box { min-width:100%; display:inline-block; }
     .tree, .tree ul { display:flex; justify-content:center; padding-top:24px; position:relative; list-style-type:none; }
-    .tree li { float:left; text-align:center; list-style-type:none; position:relative; padding:24px 10px 0 10px; }
+    .tree li { float:left; text-align:center; list-style-type:none; position:relative; padding:24px 10px 10px 10px; }
     .tree li::before, .tree li::after { content:''; position:absolute; top:0; right:50%; border-top:2px solid #94a3b8; width:50%; height:24px; }
     .tree li::after { right:auto; left:50%; border-left:2px solid #94a3b8; }
     .tree li:only-child::after, .tree li:only-child::before { display:none; }
@@ -53,15 +53,11 @@
     .choice-list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
     .choice-item { padding:10px; border-radius:8px; border:1px solid var(--border); background:#f8fafc; text-align:left; cursor:pointer; display:flex; gap:8px; align-items:center; }
     .choice-parent { background:#fefce8; border-color:#fde047; }
-    
-    /* Màn hình khóa đăng nhập */
     #lockScreen { position:fixed; inset:0; background:#0f172a; z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; }
     .lock-box { background:#fff; border-radius:16px; padding:24px; width:100%; max-width:340px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.2); }
   </style>
 </head>
 <body>
-
-  <!-- Khóa Mật Khẩu -->
   <div id="lockScreen">
     <div class="lock-box">
       <div style="font-size:2.5rem; margin-bottom:8px;">🔒</div>
@@ -72,7 +68,6 @@
       <div id="passErr" style="color:#ef4444; font-size:0.75rem; margin-top:8px; display:none;">Mật khẩu không chính xác!</div>
     </div>
   </div>
-
   <header>
     <div class="brand">🌳 Cây Gia Phả <span>(Đã Khóa)</span></div>
     <div class="top-actions">
@@ -84,9 +79,7 @@
       <button class="btn btn-del" onclick="resetAll()">🗑️ Xóa</button>
     </div>
   </header>
-
   <main id="canvas"><div class="tree-box" id="treeBox"></div></main>
-
   <div class="modal" id="modalChoice">
     <div class="modal-card">
       <div class="modal-title"><span>Thêm Quan Hệ</span><button onclick="closeMod('modalChoice')" style="border:none;background:none;font-size:1.1rem;cursor:pointer;">✕</button></div>
@@ -97,7 +90,6 @@
       </div>
     </div>
   </div>
-
   <div class="modal" id="modalForm">
     <div class="modal-card">
       <div class="modal-title"><span id="formHeader">Thông Tin</span><button onclick="closeMod('modalForm')" style="border:none;background:none;font-size:1.1rem;cursor:pointer;">✕</button></div>
@@ -114,43 +106,27 @@
       </form>
     </div>
   </div>
-
   <script>
     let tree=null,currTarget=null,tempAva='';
-    let defaultPass = "123456";
-
-    // Khởi tạo mật mã
-    function getStoredPass() {
-      return localStorage.getItem('family_pass') || defaultPass;
+    let defaultPass="123456";
+    function getStoredPass(){return localStorage.getItem('family_pass')||defaultPass;}
+    function checkPass(){
+      const val=document.getElementById('passInput').value;
+      if(val===getStoredPass()){document.getElementById('lockScreen').style.display='none';initTree();}
+      else{document.getElementById('passErr').style.display='block';}
     }
-
-    function checkPass() {
-      const val = document.getElementById('passInput').value;
-      if (val === getStoredPass()) {
-        document.getElementById('lockScreen').style.display = 'none';
-        initTree();
-      } else {
-        document.getElementById('passErr').style.display = 'block';
-      }
+    function changePassPrompt(){
+      const old=prompt('Nhập mật mã hiện tại:');
+      if(old!==getStoredPass()){alert('Mật khẩu cũ không đúng!');return;}
+      const newP=prompt('Nhập mật mã mới bạn muốn đổi:');
+      if(newP&&newP.trim()!==''){localStorage.setItem('family_pass',newP.trim());alert('Đã đổi mật mã thành công!');}
     }
-
-    function changePassPrompt() {
-      const old = prompt('Nhập mật mã hiện tại:');
-      if (old !== getStoredPass()) { alert('Mật khẩu cũ không đúng!'); return; }
-      const newP = prompt('Nhập mật mã mới bạn muốn đổi:');
-      if (newP && newP.trim() !== '') {
-        localStorage.setItem('family_pass', newP.trim());
-        alert('Đã đổi mật mã thành công! Hãy nhớ mật khẩu này.');
-      }
-    }
-
-    function initTree() {
-      const p = new URLSearchParams(window.location.search).get('data');
+    function initTree(){
+      const p=new URLSearchParams(window.location.search).get('data');
       if(p){try{tree=JSON.parse(decodeURIComponent(escape(atob(p))));}catch(e){}}
       if(!tree){const s=localStorage.getItem('f_tree_sec');if(s){try{tree=JSON.parse(s);}catch(e){}}}
       draw();
     }
-
     function draw(){
       const box=document.getElementById('treeBox');box.innerHTML='';
       if(!tree){box.innerHTML=`<div class="empty"><button class="btn-root" onclick="startRoot()">🌱 + Bấm vào đây để tạo Người Khởi Đầu</button></div>`;return;}
