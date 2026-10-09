@@ -111,7 +111,7 @@
   <header>
     <div class="brand">🌳 Cây Gia Phả Dòng Họ</div>
     <div class="top-actions">
-      <button class="btn btn-save" onclick="saveData()">💾 LƯU</button>
+      <button class="btn btn-save" onclick="saveData(true)">💾 ĐÃ TỰ LƯU</button>
       <button class="btn btn-link" onclick="shareLink()">🔗 Link Sửa Chung</button>
       <button class="btn btn-sub" onclick="changePassPrompt()">🔑 Đổi Mật Mã</button>
       <button class="btn btn-sub" onclick="exportJSON()">📥 Xuất File</button>
@@ -124,7 +124,6 @@
     <div class="tree-box" id="treeBox"></div>
   </main>
 
-  <!-- Thanh điều khiển thu nhỏ/phóng to -->
   <div class="zoom-bar">
     <button class="zoom-btn" onclick="adjustZoom(-0.15)">➖</button>
     <span class="zoom-text" id="zoomVal" onclick="resetZoom()">100%</span>
@@ -163,17 +162,17 @@
     let tree = null, currTarget = null, tempAva = '';
     let defaultPass = "123456";
     let scale = 1.0;
+    const STORAGE_KEY = 'giapha_holam_permanent_data';
 
     function getStoredPass() { return localStorage.getItem('family_pass') || defaultPass; }
 
-    // Kiểm tra mật khẩu tự động khi vừa vào trang
     window.addEventListener('load', () => {
       let auth = sessionStorage.getItem('is_auth');
       if (!auth) {
-        let entered = prompt("🔒 Vui lòng nhập mật mã dòng họ để truy cập (Mặc định: 123456):");
+        let entered = prompt("🔒 Nhập mật mã dòng họ để truy cập (Mặc định: 123456):");
         while (entered !== getStoredPass()) {
           if (entered === null) {
-            document.body.innerHTML = "<h2 style='text-align:center;margin-top:50px;'>Bạn cần nhập mật khẩu để truy cập gia phả. Hãy tải lại trang.</h2>";
+            document.body.innerHTML = "<h3 style='text-align:center;margin-top:80px;'>Vui lòng tải lại trang và nhập mật mã để truy cập gia phả.</h3>";
             return;
           }
           entered = prompt("❌ Mật khẩu không đúng! Vui lòng nhập lại:");
@@ -186,7 +185,7 @@
     function changePassPrompt() {
       const old = prompt('Nhập mật mã hiện tại:');
       if (old !== getStoredPass()) { alert('Mật khẩu cũ không đúng!'); return; }
-      const newP = prompt('Nhập mật mã mới bạn muốn đổi:');
+      const newP = prompt('Nhập mật mã mới muốn đổi:');
       if (newP && newP.trim() !== '') {
         localStorage.setItem('family_pass', newP.trim());
         alert('Đã đổi mật mã thành công!');
@@ -207,10 +206,17 @@
     }
 
     function initTree() {
+      // 1. Kiểm tra nếu có dữ liệu truyền qua link chia sẻ
       const p = new URLSearchParams(window.location.search).get('data');
-      if (p) { try { tree = JSON.parse(decodeURIComponent(escape(atob(p)))); } catch(e){} }
+      if (p) { 
+        try { 
+          tree = JSON.parse(decodeURIComponent(escape(atob(p)))); 
+          saveData(false); // Lưu ngay vào bộ nhớ máy
+        } catch(e){} 
+      }
+      // 2. Nếu không có link, tải từ bộ nhớ máy vĩnh viễn
       if (!tree) {
-        const s = localStorage.getItem('f_tree_sec');
+        const s = localStorage.getItem(STORAGE_KEY);
         if (s) { try { tree = JSON.parse(s); } catch(e){} }
       }
       draw();
@@ -225,7 +231,6 @@
       const r = document.createElement('div'); r.className = 'tree';
       const ul = document.createElement('ul'); ul.appendChild(renderNode(tree));
       r.appendChild(ul); box.appendChild(r);
-      localStorage.setItem('f_tree_sec', JSON.stringify(tree));
       applyZoom();
     }
 
@@ -316,9 +321,16 @@
           t.children.push({ id: 'p_' + Date.now(), name, gender, year, contact, avatar: tempAva, children: [] });
         }
       }
-      closeMod('modalForm'); draw();
+      closeMod('modalForm'); 
+      saveData(false); // Tự động lưu vĩnh viễn ngay lập tức
+      draw();
     }
-    function delNode(id) { if (!confirm('Xóa người này?')) return; delRec(tree, id); draw(); }
+    function delNode(id) { 
+      if (!confirm('Xóa người này?')) return; 
+      delRec(tree, id); 
+      saveData(false); // Tự động lưu sau khi xóa
+      draw(); 
+    }
     function delRec(c, id) {
       if (c.spouse && c.spouse.id === id) { delete c.spouse; return true; }
       if (c.children) {
@@ -354,14 +366,22 @@
     }
     function openMod(id) { document.getElementById(id).classList.add('active'); }
     function closeMod(id) { document.getElementById(id).classList.remove('active'); }
-    function saveData() { localStorage.setItem('f_tree_sec', JSON.stringify(tree)); alert('Đã lưu thành công!'); }
+    
+    // Hàm lưu dữ liệu vào bộ nhớ máy vĩnh viễn
+    function saveData(showAlert = true) { 
+      if (tree) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tree)); 
+        if (showAlert) alert('✅ Đã lưu dữ liệu gia phả vào máy thành công!'); 
+      }
+    }
+
     function shareLink() {
       if (!tree) { alert('Chưa có thông tin!'); return; }
       try {
         const s = btoa(unescape(encodeURIComponent(JSON.stringify(tree))));
         const u = window.location.origin + window.location.pathname + '?data=' + s;
-        navigator.clipboard.writeText(u).then(() => alert('Đã sao chép link sửa chung! Người nhận cần biết mật khẩu mới mở được.')).catch(() => prompt('Link:', u));
-      } catch(e) { alert('Dữ liệu quá lớn, hãy dùng Xuất File!'); }
+        navigator.clipboard.writeText(u).then(() => alert('✅ Đã sao chép link sửa chung! Dán link này gửi qua Zalo để người thân mở ra có sẵn toàn bộ dữ liệu.')).catch(() => prompt('Link:', u));
+      } catch(e) { alert('Dữ liệu quá lớn, hãy dùng nút Xuất File!'); }
     }
     function exportJSON() {
       if (!tree) return;
@@ -375,13 +395,20 @@
       if (!f) return;
       const rd = new FileReader();
       rd.onload = function(x) {
-        try { tree = JSON.parse(x.target.result); draw(); alert('Đã nhập!'); } catch(err) { alert('Lỗi file!'); }
+        try { 
+          tree = JSON.parse(x.target.result); 
+          saveData(false);
+          draw(); 
+          alert('✅ Đã nhập dữ liệu thành công!'); 
+        } catch(err) { alert('Lỗi file không đúng định dạng!'); }
       };
       rd.readAsText(f);
     }
     function resetAll() {
-      if (confirm('Xóa hết làm lại?')) {
-        tree = null; localStorage.removeItem('f_tree_sec'); draw();
+      if (confirm('Bạn có chắc muốn xóa hết để làm lại từ đầu?')) {
+        tree = null; 
+        localStorage.removeItem(STORAGE_KEY); 
+        draw();
       }
     }
   </script>
