@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=0.3, minimum-scale=0.1, maximum-scale=3.0, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>Cây Gia Phả Dòng Họ - Bảo Mật</title>
   <style>
     :root { --bg:#f8fafc; --card:#fff; --border:#cbd5e1; --text:#0f172a; --muted:#64748b; --primary:#2563eb; --success:#10b981; }
@@ -27,42 +27,50 @@
       background-image:radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
       background-size:20px 20px;
       position:relative;
-      touch-action:pan-x pan-y pinch-zoom;
+      touch-action:none; /* Để JS tự xử lý vuốt 2 ngón tay mượt mà */
+      cursor: grab;
     }
+    #canvas:active { cursor: grabbing; }
+
     .tree-box {
       transform-origin: top center;
-      transition: transform 0.1s ease-out;
       display: inline-block;
       margin: auto;
+      will-change: transform;
     }
     
-    /* Cụm nút phóng to thu nhỏ góc màn hình */
-    .zoom-controls {
+    /* Bảng điều khiển thu phóng nổi */
+    .zoom-bar {
       position: fixed;
-      right: 16px;
       bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      border: 1.5px solid var(--border);
+      border-radius: 30px;
+      padding: 6px 14px;
       display: flex;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 40;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+      z-index: 50;
+      backdrop-filter: blur(4px);
     }
     .zoom-btn {
-      width: 42px;
-      height: 42px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
-      background: #ffffff;
-      border: 1.5px solid var(--border);
-      color: #0f172a;
-      font-size: 1.2rem;
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      font-size: 1.1rem;
       font-weight: bold;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
     }
-    .zoom-btn:active { background: #f1f5f9; transform: scale(0.95); }
-    .zoom-reset { font-size: 0.75rem; font-weight: 700; border-radius: 12px; width: auto; padding: 0 10px; }
+    .zoom-btn:active { background: #e2e8f0; }
+    .zoom-text { font-size: 0.8rem; font-weight: 700; min-width: 45px; text-align: center; }
 
     .tree, .tree ul { display:flex; justify-content:center; padding-top:24px; position:relative; list-style-type:none; }
     .tree li { float:left; text-align:center; list-style-type:none; position:relative; padding:24px 12px 10px 12px; }
@@ -131,11 +139,11 @@
     <div class="tree-box" id="treeBox"></div>
   </main>
 
-  <!-- Bộ phím bấm thu phóng màn hình -->
-  <div class="zoom-controls">
-    <button class="zoom-btn" onclick="adjustZoom(0.1)" title="Phóng to">➕</button>
-    <button class="zoom-btn" onclick="adjustZoom(-0.1)" title="Thu nhỏ">➖</button>
-    <button class="zoom-btn zoom-reset" onclick="resetZoom()" title="Về 100%">100%</button>
+  <!-- Thanh điều khiển thu nhỏ/phóng to ở giữa mép dưới -->
+  <div class="zoom-bar">
+    <button class="zoom-btn" onclick="adjustZoom(-0.15)">➖</button>
+    <span class="zoom-text" id="zoomVal" onclick="resetZoom()" title="Bấm để về 100%">100%</span>
+    <button class="zoom-btn" onclick="adjustZoom(0.15)">➕</button>
   </div>
 
   <div class="modal" id="modalChoice">
@@ -169,19 +177,42 @@
   <script>
     let tree=null,currTarget=null,tempAva='';
     let defaultPass="123456";
-    let currentScale = 1.0;
+    let scale = 1.0;
+    let initialDist = 0;
+    let initialScale = 1.0;
+
+    // Xử lý vuốt chụm 2 ngón tay thu nhỏ/phóng to mượt mà
+    const canvas = document.getElementById('canvas');
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+        initialScale = scale;
+      }
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+        if (initialDist > 0) {
+          const factor = dist / initialDist;
+          scale = Math.min(Math.max(0.15, initialScale * factor), 2.5);
+          applyZoom();
+        }
+      }
+    }, { passive: false });
 
     function adjustZoom(delta) {
-      currentScale = Math.min(Math.max(0.2, currentScale + delta), 2.5);
+      scale = Math.min(Math.max(0.15, scale + delta), 2.5);
       applyZoom();
     }
     function resetZoom() {
-      currentScale = 1.0;
+      scale = 1.0;
       applyZoom();
     }
     function applyZoom() {
-      const box = document.getElementById('treeBox');
-      box.style.transform = `scale(${currentScale})`;
+      document.getElementById('treeBox').style.transform = `scale(${scale})`;
+      document.getElementById('zoomVal').innerText = Math.round(scale * 100) + '%';
     }
 
     function getStoredPass(){return localStorage.getItem('family_pass')||defaultPass;}
@@ -233,4 +264,27 @@
       else if(rel==='edit'){const n=findN(tree,id);if(n){n.name=name;n.gender=gender;n.year=year;n.contact=contact;if(tempAva)n.avatar=tempAva;}}
       else if(rel==='parent'){const o=tree;tree={id:'p_'+Date.now(),name,gender,year,contact,avatar:tempAva,children:[o]};}
       else if(rel==='spouse'){const t=findN(tree,target);if(t)t.spouse={id:'p_'+Date.now(),name,gender,year,contact,avatar:tempAva};}
-      else if(rel==='
+      else if(rel==='child'){const t=findN(tree,target);if(t){if(!t.children)t.children=[];t.children.push({id:'p_'+Date.now(),name,gender,year,contact,avatar:tempAva,children:[]});}}
+      closeMod('modalForm');draw();
+    }
+    function delNode(id){if(!confirm('Xóa người này?'))return;delRec(tree,id);draw();}
+    function delRec(c,id){if(c.spouse&&c.spouse.id===id){delete c.spouse;return true;}if(c.children){const i=c.children.findIndex(x=>x.id===id);if(i!==-1){c.children.splice(i,1);return true;}for(let k of c.children){if(delRec(k,id))return true;}}return false;}
+    function findN(c,id){if(!c)return null;if(c.id===id)return c;if(c.spouse&&c.spouse.id===id)return c.spouse;if(c.children){for(let k of c.children){const r=findN(k,id);if(r)return r;}}return null;}
+    function readImg(e){const f=e.target.files[0];if(f){const rd=new FileReader();rd.onload=function(x){tempAva=x.target.result;const p=document.getElementById('imgPrev');p.src=tempAva;p.style.display='block';};rd.readAsDataURL(f);}}
+    function openMod(id){document.getElementById(id).classList.add('active');}
+    function closeMod(id){document.getElementById(id).classList.remove('active');}
+    function saveData(){localStorage.setItem('f_tree_sec',JSON.stringify(tree));alert('Đã lưu thành công!');}
+    function shareLink(){
+      if(!tree){alert('Chưa có thông tin!');return;}
+      try{
+        const s=btoa(unescape(encodeURIComponent(JSON.stringify(tree))));
+        const u=window.location.origin+window.location.pathname+'?data='+s;
+        navigator.clipboard.writeText(u).then(()=>alert('Đã sao chép link sửa chung! Người nhận cần biết mật khẩu mới mở được.')).catch(()=>prompt('Link:',u));
+      }catch(e){alert('Dữ liệu quá lớn, hãy dùng Xuất File!');}
+    }
+    function exportJSON(){if(!tree)return;const a=document.createElement('a');a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(tree,null,2));a.download="giapha.json";document.body.appendChild(a);a.click();a.remove();}
+    function importJSON(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=function(x){try{tree=JSON.parse(x.target.result);draw();alert('Đã nhập!');}catch(err){alert('Lỗi file!');}};rd.readAsText(f);}
+    function resetAll(){if(confirm('Xóa hết làm lại?')){tree=null;localStorage.removeItem('f_tree_sec');draw();}}
+  </script>
+</body>
+</html>
