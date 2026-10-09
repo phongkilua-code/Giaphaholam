@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cây Gia Phả Dòng Họ - Bảo Mật</title>
+  <style>
+    :root { --bg:#f8fafc; --card:#fff; --border:#cbd5e1; --text:#0f172a; --muted:#64748b; --primary:#2563eb; --success:#10b981; }
+    * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+    header { background:#fff; border-bottom:1px solid var(--border); padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+    .brand { font-weight:700; font-size:1.05rem; display:flex; align-items:center; gap:6px; }
+    .top-actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+    .btn { padding:7px 11px; border-radius:8px; border:1px solid transparent; font-size:0.8rem; font-weight:600; cursor:pointer; font-family:inherit; }
+    .btn-save { background:var(--success); color:#fff; }
+    .btn-link { background:var(--primary); color:#fff; }
+    .btn-sub { background:#f1f5f9; color:#334155; border-color:var(--border); }
+    .btn-del { background:#fee2e2; color:#ef4444; }
+    #canvas { flex:1; overflow:auto; padding:40px 16px; display:flex; justify-content:center; align-items:flex-start; background-image:radial-gradient(#cbd5e1 1px, transparent 1px); background-size:20px 20px; }
+    .tree-box { min-width:100%; display:inline-block; }
+    .tree, .tree ul { display:flex; justify-content:center; padding-top:24px; position:relative; list-style-type:none; }
+    .tree li { float:left; text-align:center; list-style-type:none; position:relative; padding:24px 10px 0 10px; }
+    .tree li::before, .tree li::after { content:''; position:absolute; top:0; right:50%; border-top:2px solid #94a3b8; width:50%; height:24px; }
+    .tree li::after { right:auto; left:50%; border-left:2px solid #94a3b8; }
+    .tree li:only-child::after, .tree li:only-child::before { display:none; }
+    .tree li:only-child { padding-top:0; }
+    .tree li:first-child::before, .tree li:last-child::after { border:0 none; }
+    .tree li:last-child::before { border-right:2px solid #94a3b8; border-radius:0 8px 0 0; }
+    .tree li:first-child::after { border-radius:8px 0 0 0; }
+    .tree ul::before { content:''; position:absolute; top:0; left:50%; border-left:2px solid #94a3b8; width:0; height:24px; }
+    .family { display:inline-flex; align-items:center; gap:8px; }
+    .ring { background:#fef3c7; border:1px dashed #d97706; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center; }
+    .card { background:var(--card); border:1.5px solid var(--border); border-radius:12px; padding:10px; width:200px; text-align:left; box-shadow:0 4px 10px rgba(0,0,0,0.03); }
+    .card.male { border-top:4px solid #0284c7; }
+    .card.female { border-top:4px solid #e11d48; }
+    .card-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+    .ava { width:42px; height:42px; border-radius:50%; object-fit:cover; background:#f1f5f9; border:1.5px solid var(--border); flex-shrink:0; }
+    .c-name { font-weight:700; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .c-year { font-size:0.72rem; color:var(--muted); margin-top:2px; }
+    .c-contact { display:inline-block; font-size:0.7rem; padding:2px 6px; border-radius:5px; margin-top:5px; background:#e0f2fe; color:#0284c7; font-weight:600; text-decoration:none; }
+    .card-foot { display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:6px; border-top:1px solid #f1f5f9; }
+    .btn-plus { width:26px; height:26px; border-radius:50%; background:var(--primary); color:#fff; border:none; font-size:1rem; cursor:pointer; }
+    .btn-action { background:none; border:none; font-size:0.72rem; color:var(--muted); cursor:pointer; }
+    .empty { display:flex; align-items:center; justify-content:center; margin:80px auto; }
+    .btn-root { background:var(--primary); color:#fff; border:none; padding:13px 22px; border-radius:12px; font-size:0.95rem; font-weight:700; cursor:pointer; }
+    .modal { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:100; padding:14px; backdrop-filter:blur(3px); }
+    .modal.active { display:flex; }
+    .modal-card { background:#fff; border-radius:14px; width:100%; max-width:400px; padding:18px; max-height:90vh; overflow-y:auto; }
+    .modal-title { display:flex; justify-content:space-between; font-weight:700; margin-bottom:12px; }
+    .form-item { margin-bottom:10px; }
+    .form-item label { display:block; font-size:0.72rem; font-weight:600; color:var(--muted); margin-bottom:3px; }
+    .form-item input, .form-item select { width:100%; padding:8px 10px; border-radius:7px; border:1px solid var(--border); font-family:inherit; font-size:0.85rem; }
+    .choice-list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+    .choice-item { padding:10px; border-radius:8px; border:1px solid var(--border); background:#f8fafc; text-align:left; cursor:pointer; display:flex; gap:8px; align-items:center; }
+    .choice-parent { background:#fefce8; border-color:#fde047; }
+    
+    /* Màn hình khóa đăng nhập */
+    #lockScreen { position:fixed; inset:0; background:#0f172a; z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .lock-box { background:#fff; border-radius:16px; padding:24px; width:100%; max-width:340px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.2); }
+  </style>
+</head>
+<body>
+
+  <!-- Khóa Mật Khẩu -->
+  <div id="lockScreen">
+    <div class="lock-box">
+      <div style="font-size:2.5rem; margin-bottom:8px;">🔒</div>
+      <h3 style="margin-bottom:6px; font-size:1.15rem;">Bảo Mật Gia Phả</h3>
+      <p style="font-size:0.8rem; color:#64748b; margin-bottom:16px;">Vui lòng nhập mật mã dòng họ để truy cập</p>
+      <input type="password" id="passInput" placeholder="Nhập mật khẩu..." style="width:100%; padding:10px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:1rem; text-align:center; margin-bottom:12px; outline:none;">
+      <button class="btn btn-link" onclick="checkPass()" style="width:100%; padding:10px; font-size:0.9rem; justify-content:center;">Mở Khóa</button>
+      <div id="passErr" style="color:#ef4444; font-size:0.75rem; margin-top:8px; display:none;">Mật khẩu không chính xác!</div>
+    </div>
+  </div>
+
+  <header>
+    <div class="brand">🌳 Cây Gia Phả <span>(Đã Khóa)</span></div>
+    <div class="top-actions">
+      <button class="btn btn-save" onclick="saveData()">💾 LƯU</button>
+      <button class="btn btn-link" onclick="shareLink()">🔗 Link Sửa Chung</button>
+      <button class="btn btn-sub" onclick="changePassPrompt()">🔑 Đổi Mật Mã</button>
+      <button class="btn btn-sub" onclick="exportJSON()">📥 Xuất File</button>
+      <label class="btn btn-sub" style="margin:0;cursor:pointer;">📤 Nhập File<input type="file" id="inpFile" accept=".json" style="display:none;" onchange="importJSON(event)"></label>
+      <button class="btn btn-del" onclick="resetAll()">🗑️ Xóa</button>
+    </div>
+  </header>
+
+  <main id="canvas"><div class="tree-box" id="treeBox"></div></main>
+
+  <div class="modal" id="modalChoice">
+    <div class="modal-card">
+      <div class="modal-title"><span>Thêm Quan Hệ</span><button onclick="closeMod('modalChoice')" style="border:none;background:none;font-size:1.1rem;cursor:pointer;">✕</button></div>
+      <div class="choice-list">
+        <button class="choice-item choice-parent" onclick="startAdd('parent')"><span style="font-size:1.3rem;">🧓</span><div><strong>Thêm Cha / Mẹ (Chĩa lên trên)</strong><div style="font-size:0.72rem;color:var(--muted);">Đẩy người hiện tại làm con, thêm cha mẹ ở trên</div></div></button>
+        <button class="choice-item" onclick="startAdd('spouse')"><span style="font-size:1.3rem;">💍</span><div><strong>Thêm Vợ / Chồng (Nối ngang)</strong><div style="font-size:0.72rem;color:var(--muted);">Nối cùng hàng ngang</div></div></button>
+        <button class="choice-item" onclick="startAdd('child')"><span style="font-size:1.3rem;">👶</span><div><strong>Thêm Con Cái (Rẽ nhánh xuống)</strong><div style="font-size:0.72rem;color:var(--muted);">Tạo con cháu ở tầng dưới</div></div></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalForm">
+    <div class="modal-card">
+      <div class="modal-title"><span id="formHeader">Thông Tin</span><button onclick="closeMod('modalForm')" style="border:none;background:none;font-size:1.1rem;cursor:pointer;">✕</button></div>
+      <form id="infoForm" onsubmit="submitForm(event)">
+        <input type="hidden" id="fId"><input type="hidden" id="fTarget"><input type="hidden" id="fRel">
+        <div class="form-item"><label>Họ và Tên (*)</label><input type="text" id="fName" placeholder="Nguyễn Văn An" required></div>
+        <div style="display:flex;gap:8px;">
+          <div class="form-item" style="flex:1;"><label>Giới tính</label><select id="fGender"><option value="male">Nam</option><option value="female">Nữ</option></select></div>
+          <div class="form-item" style="flex:1;"><label>Năm sinh</label><input type="text" id="fYear" placeholder="1965"></div>
+        </div>
+        <div class="form-item"><label>Liên hệ (Zalo / FB)</label><input type="text" id="fContact" placeholder="Số Zalo hoặc link FB"></div>
+        <div class="form-item"><label>Ảnh đại diện</label><input type="file" id="fImg" accept="image/*" onchange="readImg(event)"><img id="imgPrev" style="width:36px;height:36px;border-radius:50%;display:none;margin-top:6px;object-fit:cover;"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;"><button type="submit" class="btn btn-link" style="flex:1;padding:9px;">Lưu</button><button type="button" class="btn btn-sub" onclick="closeMod('modalForm')">Hủy</button></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let tree=null,currTarget=null,tempAva='';
+    let defaultPass = "123456";
+
+    // Khởi tạo mật mã
+    function getStoredPass() {
+      return localStorage.getItem('family_pass') || defaultPass;
+    }
+
+    function checkPass() {
+      const val = document.getElementById('passInput').value;
+      if (val === getStoredPass()) {
+        document.getElementById('lockScreen').style.display = 'none';
+        initTree();
+      } else {
+        document.getElementById('passErr').style.display = 'block';
+      }
+    }
+
+    function changePassPrompt() {
+      const old = prompt('Nhập mật mã hiện tại:');
+      if (old !== getStoredPass()) { alert('Mật khẩu cũ không đúng!'); return; }
+      const newP = prompt('Nhập mật mã mới bạn muốn đổi:');
+      if (newP && newP.trim() !== '') {
+        localStorage.setItem('family_pass', newP.trim());
+        alert('Đã đổi mật mã thành công! Hãy nhớ mật khẩu này.');
+      }
+    }
+
+    function initTree() {
+      const p = new URLSearchParams(window.location.search).get('data');
+      if(p){try{tree=JSON.parse(decodeURIComponent(escape(atob(p))));}catch(e){}}
+      if(!tree){const s=localStorage.getItem('f_tree_sec');if(s){try{tree=JSON.parse(s);}catch(e){}}}
+      draw();
+    }
+
+    function draw(){
+      const box=document.getElementById('treeBox');box.innerHTML='';
+      if(!tree){box.innerHTML=`<div class="empty"><button class="btn-root" onclick="startRoot()">🌱 + Bấm vào đây để tạo Người Khởi Đầu</button></div>`;return;}
+      const r=document.createElement('div');r.className='tree';const ul=document.createElement('ul');ul.appendChild(renderNode(tree));r.appendChild(ul);box.appendChild(r);
+      localStorage.setItem('f_tree_sec',JSON.stringify(tree));
+    }
+    function renderNode(n){
+      const li=document.createElement('li');const f=document.createElement('div');f.className='family';f.appendChild(makeCard(n));
+      if(n.spouse){const rg=document.createElement('div');rg.className='ring';rg.innerText='💍';f.appendChild(rg);f.appendChild(makeCard(n.spouse,true));}
+      li.appendChild(f);
+      if(n.children&&n.children.length>0){const ul=document.createElement('ul');n.children.forEach(c=>ul.appendChild(renderNode(c)));li.appendChild(ul);}
+      return li;
+    }
+    function makeCard(n,isSpouse=false){
+      const d=document.createElement('div');d.className=`card ${n.gender||'male'}`;
+      const ava=n.avatar||"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+      let cont=n.contact?`<div class="c-contact">${n.contact}</div>`:'';
+      d.innerHTML=`<div class="card-head"><img class="ava" src="${ava}"><div style="flex:1;overflow:hidden;"><div class="c-name">${n.name}</div><div class="c-year">${n.year?'Sinh: '+n.year:'Thành viên'}</div>${cont}</div></div><div class="card-foot"><button class="btn-action" onclick="editNode('${n.id}')">✏️ Sửa</button>${isSpouse||n.id!==tree.id?`<button class="btn-action" style="color:#ef4444;" onclick="delNode('${n.id}')">Xóa</button>`:''}<button class="btn-plus" onclick="pickRel('${n.id}')">+</button></div>`;
+      return d;
+    }
+    function startRoot(){currTarget=null;document.getElementById('infoForm').reset();document.getElementById('fId').value='';document.getElementById('fRel').value='root';document.getElementById('formHeader').innerText='Tạo Người Khởi Đầu';document.getElementById('imgPrev').style.display='none';tempAva='';openMod('modalForm');}
+    function pickRel(id){currTarget=id;openMod('modalChoice');}
+    function startAdd(rel){closeMod('modalChoice');document.getElementById('infoForm').reset();document.getElementById('fId').value='';document.getElementById('fTarget').value=currTarget;document.getElementById('fRel').value=rel;document.getElementById('imgPrev').style.display='none';tempAva='';const t={parent:'Thêm Cha / Mẹ',spouse:'Thêm Vợ / Chồng',child:'Thêm Con Cái'};document.getElementById('formHeader').innerText=t[rel];openMod('modalForm');}
+    function editNode(id){const n=findN(tree,id);if(!n)return;document.getElementById('infoForm').reset();document.getElementById('fId').value=n.id;document.getElementById('fRel').value='edit';document.getElementById('fName').value=n.name||'';document.getElementById('fGender').value=n.gender||'male';document.getElementById('fYear').value=n.year||'';document.getElementById('fContact').value=n.contact||'';tempAva=n.avatar||'';const p=document.getElementById('imgPrev');if(tempAva){p.src=tempAva;p.style.display='block';}else{p.style.display='none';}document.getElementById('formHeader').innerText='Sửa Thông Tin';openMod('modalForm');}
+    function submitForm(e){
+      e.preventDefault();const id=document.getElementById('fId').value,target=document.getElementById('fTarget').value,rel=document.getElementById('fRel').value,name=document.getElementById('fName').value.trim(),gender=document.getElementById('fGender').value,year=document.getElementById('fYear').value.trim(),contact=document.getElementById('fContact').value.trim();
+      if(rel==='root'){tree={id:'p_'+Date.now(),name,gender,year,contact,avatar:tempAva,children:[]};}
+      else if(rel==='edit'){const n=findN(tree,id);if(n){n.name=name;n.gender=gender;n.year=year;n.contact=contact;if(tempAva)n.avatar=tempAva;}}
+      else if(rel==='parent'){const o=tree;tree={id:'p_'+Date.now(),name,gender,year,contact,avatar:tempAva,children:[o]};}
+      else if(rel==='spouse'){const t=findN(tree,target);if(t)t.spouse={id:'p_'+Date.now(),name,gender,year,contact,avatar:tempAva};}
+      else if(rel==='child'){const t=findN(tree,target);if(t){if(!t.children)t.children=[];t.children.push({id:'p_'+Date.now(),name,gender,year,contact,avatar:tempAva,children:[]});}}
+      closeMod('modalForm');draw();
+    }
+    function delNode(id){if(!confirm('Xóa người này?'))return;delRec(tree,id);draw();}
+    function delRec(c,id){if(c.spouse&&c.spouse.id===id){delete c.spouse;return true;}if(c.children){const i=c.children.findIndex(x=>x.id===id);if(i!==-1){c.children.splice(i,1);return true;}for(let k of c.children){if(delRec(k,id))return true;}}return false;}
+    function findN(c,id){if(!c)return null;if(c.id===id)return c;if(c.spouse&&c.spouse.id===id)return c.spouse;if(c.children){for(let k of c.children){const r=findN(k,id);if(r)return r;}}return null;}
+    function readImg(e){const f=e.target.files[0];if(f){const rd=new FileReader();rd.onload=function(x){tempAva=x.target.result;const p=document.getElementById('imgPrev');p.src=tempAva;p.style.display='block';};rd.readAsDataURL(f);}}
+    function openMod(id){document.getElementById(id).classList.add('active');}
+    function closeMod(id){document.getElementById(id).classList.remove('active');}
+    function saveData(){localStorage.setItem('f_tree_sec',JSON.stringify(tree));alert('Đã lưu thành công!');}
+    function shareLink(){
+      if(!tree){alert('Chưa có thông tin!');return;}
+      try{
+        const s=btoa(unescape(encodeURIComponent(JSON.stringify(tree))));
+        const u=window.location.origin+window.location.pathname+'?data='+s;
+        navigator.clipboard.writeText(u).then(()=>alert('Đã sao chép link sửa chung! Người nhận cần biết mật khẩu mới mở được.')).catch(()=>prompt('Link:',u));
+      }catch(e){alert('Dữ liệu quá lớn, hãy dùng Xuất File!');}
+    }
+    function exportJSON(){if(!tree)return;const a=document.createElement('a');a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(tree,null,2));a.download="giapha.json";document.body.appendChild(a);a.click();a.remove();}
+    function importJSON(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=function(x){try{tree=JSON.parse(x.target.result);draw();alert('Đã nhập!');}catch(err){alert('Lỗi file!');}};rd.readAsText(f);}
+    function resetAll(){if(confirm('Xóa hết làm lại?')){tree=null;localStorage.removeItem('f_tree_sec');draw();}}
+  </script>
+</body>
+</html>
