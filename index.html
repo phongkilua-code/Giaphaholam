@@ -2,14 +2,14 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-  <title>Cây Gia Phả Dòng Họ - Bảo Mật</title>
+  <meta name="viewport" content="width=device-width, initial-scale=0.5, minimum-scale=0.1, maximum-scale=3.0, user-scalable=yes">
+  <title>Cây Gia Phả Dòng Họ</title>
   <style>
     :root { --bg:#f8fafc; --card:#fff; --border:#cbd5e1; --text:#0f172a; --muted:#64748b; --primary:#2563eb; --success:#10b981; }
-    * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    * { box-sizing:border-box; margin:0; padding:0; }
     body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
     header { background:#fff; border-bottom:1px solid var(--border); padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; z-index:30; }
-    .brand { font-weight:700; font-size:1.05rem; display:flex; align-items:center; gap:6px; }
+    .brand { font-weight:700; font-size:1.05rem; }
     .top-actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
     .btn { padding:7px 11px; border-radius:8px; border:1px solid transparent; font-size:0.8rem; font-weight:600; cursor:pointer; font-family:inherit; }
     .btn-save { background:var(--success); color:#fff; }
@@ -27,52 +27,46 @@
       background-image:radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
       background-size:20px 20px;
       position:relative;
-      touch-action: pan-x pan-y;
-      cursor: grab;
     }
-    #canvas:active { cursor: grabbing; }
 
     .tree-box {
       transform-origin: top center;
       display: inline-block;
       margin: auto;
-      will-change: transform;
-      transition: transform 0.05s ease-out;
+      transition: transform 0.15s ease-out;
     }
     
-    /* Bảng điều khiển thu phóng nổi */
+    /* Bảng điều khiển thu nhỏ phóng to */
     .zoom-bar {
       position: fixed;
-      bottom: 20px;
+      bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.95);
-      border: 1.5px solid var(--border);
+      background: #ffffff;
+      border: 2px solid var(--primary);
       border-radius: 30px;
-      padding: 6px 14px;
+      padding: 6px 16px;
       display: flex;
       align-items: center;
-      gap: 10px;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
-      z-index: 50;
-      backdrop-filter: blur(4px);
+      gap: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+      z-index: 99;
     }
     .zoom-btn {
       width: 36px;
       height: 36px;
       border-radius: 50%;
-      background: #f1f5f9;
+      background: #eff6ff;
       border: 1px solid var(--border);
-      font-size: 1.15rem;
+      font-size: 1.2rem;
       font-weight: bold;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      color: #1e293b;
+      color: var(--primary);
     }
-    .zoom-btn:active { background: #e2e8f0; }
-    .zoom-text { font-size: 0.82rem; font-weight: 700; min-width: 48px; text-align: center; cursor: pointer; }
+    .zoom-text { font-size: 0.85rem; font-weight: 700; min-width: 50px; text-align: center; }
 
     .tree, .tree ul { display:flex; justify-content:center; padding-top:24px; position:relative; list-style-type:none; }
     .tree li { float:left; text-align:center; list-style-type:none; position:relative; padding:24px 12px 10px 12px; }
@@ -100,7 +94,7 @@
     .empty { display:flex; align-items:center; justify-content:center; margin:80px auto; }
     .btn-root { background:var(--primary); color:#fff; border:none; padding:13px 22px; border-radius:12px; font-size:0.95rem; font-weight:700; cursor:pointer; }
     
-    .modal { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:100; padding:14px; backdrop-filter:blur(3px); }
+    .modal { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:100; padding:14px; }
     .modal.active { display:flex; }
     .modal-card { background:#fff; border-radius:14px; width:100%; max-width:400px; padding:18px; max-height:90vh; overflow-y:auto; }
     .modal-title { display:flex; justify-content:space-between; font-weight:700; margin-bottom:12px; }
@@ -110,63 +104,12 @@
     .choice-list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
     .choice-item { padding:10px; border-radius:8px; border:1px solid var(--border); background:#f8fafc; text-align:left; cursor:pointer; display:flex; gap:8px; align-items:center; }
     .choice-parent { background:#fefce8; border-color:#fde047; }
-    
-    /* Màn hình khóa đăng nhập */
-    #lockScreen { 
-      position:fixed; 
-      inset:0; 
-      background:#0f172a; 
-      z-index:99999; 
-      display:flex; 
-      align-items:center; 
-      justify-content:center; 
-      padding:20px; 
-      pointer-events: auto;
-    }
-    .lock-box { 
-      background:#fff; 
-      border-radius:16px; 
-      padding:24px; 
-      width:100%; 
-      max-width:340px; 
-      text-align:center; 
-      box-shadow:0 10px 25px rgba(0,0,0,0.25); 
-    }
-    .lock-btn {
-      width: 100%;
-      padding: 12px;
-      font-size: 0.95rem;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .lock-btn:active { background: #1d4ed8; }
   </style>
 </head>
 <body>
 
-  <!-- Khóa Mật Khẩu -->
-  <div id="lockScreen">
-    <div class="lock-box">
-      <div style="font-size:2.6rem; margin-bottom:8px;">🔒</div>
-      <h3 style="margin-bottom:6px; font-size:1.15rem; color:#0f172a;">Bảo Mật Gia Phả</h3>
-      <p style="font-size:0.8rem; color:#64748b; margin-bottom:16px;">Vui lòng nhập mật mã dòng họ để truy cập</p>
-      
-      <form onsubmit="handlePassSubmit(event)">
-        <input type="password" id="passInput" placeholder="Nhập mật khẩu..." autocomplete="current-password"
-               style="width:100%; padding:11px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:1rem; text-align:center; margin-bottom:12px; outline:none;">
-        <button type="submit" class="lock-btn" id="btnUnlock">Mở Khóa</button>
-      </form>
-
-      <div id="passErr" style="color:#ef4444; font-size:0.8rem; margin-top:10px; display:none; font-weight:600;">Mật khẩu không chính xác!</div>
-    </div>
-  </div>
-
   <header>
-    <div class="brand">🌳 Cây Gia Phả <span>(Đã Khóa)</span></div>
+    <div class="brand">🌳 Cây Gia Phả Dòng Họ</div>
     <div class="top-actions">
       <button class="btn btn-save" onclick="saveData()">💾 LƯU</button>
       <button class="btn btn-link" onclick="shareLink()">🔗 Link Sửa Chung</button>
@@ -184,7 +127,7 @@
   <!-- Thanh điều khiển thu nhỏ/phóng to -->
   <div class="zoom-bar">
     <button class="zoom-btn" onclick="adjustZoom(-0.15)">➖</button>
-    <span class="zoom-text" id="zoomVal" onclick="resetZoom()" title="Chạm để về 100%">100%</span>
+    <span class="zoom-text" id="zoomVal" onclick="resetZoom()">100%</span>
     <button class="zoom-btn" onclick="adjustZoom(0.15)">➕</button>
   </div>
 
@@ -217,50 +160,38 @@
   </div>
 
   <script>
-    let tree=null,currTarget=null,tempAva='';
-    let defaultPass="123456";
+    let tree = null, currTarget = null, tempAva = '';
+    let defaultPass = "123456";
     let scale = 1.0;
-    let initialDist = 0;
-    let initialScale = 1.0;
 
-    // Xử lý mở khóa
-    function getStoredPass(){ return localStorage.getItem('family_pass') || defaultPass; }
+    function getStoredPass() { return localStorage.getItem('family_pass') || defaultPass; }
 
-    function handlePassSubmit(e) {
-      if (e) e.preventDefault();
-      const val = document.getElementById('passInput').value;
-      if (val === getStoredPass()) {
-        document.getElementById('lockScreen').style.display = 'none';
-        initTree();
-      } else {
-        document.getElementById('passErr').style.display = 'block';
+    // Kiểm tra mật khẩu tự động khi vừa vào trang
+    window.addEventListener('load', () => {
+      let auth = sessionStorage.getItem('is_auth');
+      if (!auth) {
+        let entered = prompt("🔒 Vui lòng nhập mật mã dòng họ để truy cập (Mặc định: 123456):");
+        while (entered !== getStoredPass()) {
+          if (entered === null) {
+            document.body.innerHTML = "<h2 style='text-align:center;margin-top:50px;'>Bạn cần nhập mật khẩu để truy cập gia phả. Hãy tải lại trang.</h2>";
+            return;
+          }
+          entered = prompt("❌ Mật khẩu không đúng! Vui lòng nhập lại:");
+        }
+        sessionStorage.setItem('is_auth', 'true');
+      }
+      initTree();
+    });
+
+    function changePassPrompt() {
+      const old = prompt('Nhập mật mã hiện tại:');
+      if (old !== getStoredPass()) { alert('Mật khẩu cũ không đúng!'); return; }
+      const newP = prompt('Nhập mật mã mới bạn muốn đổi:');
+      if (newP && newP.trim() !== '') {
+        localStorage.setItem('family_pass', newP.trim());
+        alert('Đã đổi mật mã thành công!');
       }
     }
-
-    function changePassPrompt(){
-      const old=prompt('Nhập mật mã hiện tại:');
-      if(old!==getStoredPass()){alert('Mật khẩu cũ không đúng!');return;}
-      const newP=prompt('Nhập mật mã mới bạn muốn đổi:');
-      if(newP&&newP.trim()!==''){localStorage.setItem('family_pass',newP.trim());alert('Đã đổi mật mã thành công!');}
-    }
-
-    // Thu phóng 2 ngón tay trên canvas
-    const canvas = document.getElementById('canvas');
-    canvas.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 2) {
-        initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-        initialScale = scale;
-      }
-    }, { passive: true });
-
-    canvas.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 2 && initialDist > 0) {
-        const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-        const factor = dist / initialDist;
-        scale = Math.min(Math.max(0.15, initialScale * factor), 2.5);
-        applyZoom();
-      }
-    }, { passive: true });
 
     function adjustZoom(delta) {
       scale = Math.min(Math.max(0.15, scale + delta), 2.5);
@@ -275,64 +206,184 @@
       document.getElementById('zoomVal').innerText = Math.round(scale * 100) + '%';
     }
 
-    function initTree(){
-      const p=new URLSearchParams(window.location.search).get('data');
-      if(p){try{tree=JSON.parse(decodeURIComponent(escape(atob(p))));}catch(e){}}
-      if(!tree){const s=localStorage.getItem('f_tree_sec');if(s){try{tree=JSON.parse(s);}catch(e){}}}
+    function initTree() {
+      const p = new URLSearchParams(window.location.search).get('data');
+      if (p) { try { tree = JSON.parse(decodeURIComponent(escape(atob(p)))); } catch(e){} }
+      if (!tree) {
+        const s = localStorage.getItem('f_tree_sec');
+        if (s) { try { tree = JSON.parse(s); } catch(e){} }
+      }
       draw();
     }
-    function draw(){
-      const box=document.getElementById('treeBox');box.innerHTML='';
-      if(!tree){box.innerHTML=`<div class="empty"><button class="btn-root" onclick="startRoot()">🌱 + Bấm vào đây để tạo Người Khởi Đầu</button></div>`;return;}
-      const r=document.createElement('div');r.className='tree';const ul=document.createElement('ul');ul.appendChild(renderNode(tree));r.appendChild(ul);box.appendChild(r);
-      localStorage.setItem('f_tree_sec',JSON.stringify(tree));
+
+    function draw() {
+      const box = document.getElementById('treeBox'); box.innerHTML = '';
+      if (!tree) {
+        box.innerHTML = `<div class="empty"><button class="btn-root" onclick="startRoot()">🌱 + Bấm vào đây để tạo Người Khởi Đầu</button></div>`;
+        return;
+      }
+      const r = document.createElement('div'); r.className = 'tree';
+      const ul = document.createElement('ul'); ul.appendChild(renderNode(tree));
+      r.appendChild(ul); box.appendChild(r);
+      localStorage.setItem('f_tree_sec', JSON.stringify(tree));
       applyZoom();
     }
-    function renderNode(n){
-      const li=document.createElement('li');const f=document.createElement('div');f.className='family';f.appendChild(makeCard(n));
-      if(n.spouse){const rg=document.createElement('div');rg.className='ring';rg.innerText='💍';f.appendChild(rg);f.appendChild(makeCard(n.spouse,true));}
+
+    function renderNode(n) {
+      const li = document.createElement('li'); const f = document.createElement('div'); f.className = 'family'; f.appendChild(makeCard(n));
+      if (n.spouse) {
+        const rg = document.createElement('div'); rg.className = 'ring'; rg.innerText = '💍';
+        f.appendChild(rg); f.appendChild(makeCard(n.spouse, true));
+      }
       li.appendChild(f);
-      if(n.children&&n.children.length>0){const ul=document.createElement('ul');n.children.forEach(c=>ul.appendChild(renderNode(c)));li.appendChild(ul);}
+      if (n.children && n.children.length > 0) {
+        const ul = document.createElement('ul');
+        n.children.forEach(c => ul.appendChild(renderNode(c)));
+        li.appendChild(ul);
+      }
       return li;
     }
-    function makeCard(n,isSpouse=false){
-      const d=document.createElement('div');d.className=`card ${n.gender||'male'}`;
-      const ava=n.avatar||"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
-      let cont=n.contact?`<div class="c-contact">${n.contact}</div>`:'';
-      d.innerHTML=`<div class="card-head"><img class="ava" src="${ava}"><div style="flex:1;overflow:hidden;"><div class="c-name">${n.name}</div><div class="c-year">${n.year?'Sinh: '+n.year:'Thành viên'}</div>${cont}</div></div><div class="card-foot"><button class="btn-action" onclick="editNode('${n.id}')">✏️ Sửa</button>${isSpouse||n.id!==tree.id?`<button class="btn-action" style="color:#ef4444;" onclick="delNode('${n.id}')">Xóa</button>`:''}<button class="btn-plus" onclick="pickRel('${n.id}')">+</button></div>`;
+
+    function makeCard(n, isSpouse = false) {
+      const d = document.createElement('div'); d.className = `card ${n.gender || 'male'}`;
+      const ava = n.avatar || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+      let cont = n.contact ? `<div class="c-contact">${n.contact}</div>` : '';
+      d.innerHTML = `
+        <div class="card-head">
+          <img class="ava" src="${ava}">
+          <div style="flex:1;overflow:hidden;">
+            <div class="c-name">${n.name}</div>
+            <div class="c-year">${n.year ? 'Sinh: ' + n.year : 'Thành viên'}</div>
+            ${cont}
+          </div>
+        </div>
+        <div class="card-foot">
+          <button class="btn-action" onclick="editNode('${n.id}')">✏️ Sửa</button>
+          ${isSpouse || n.id !== tree.id ? `<button class="btn-action" style="color:#ef4444;" onclick="delNode('${n.id}')">Xóa</button>` : ''}
+          <button class="btn-plus" onclick="pickRel('${n.id}')">+</button>
+        </div>
+      `;
       return d;
     }
-    function startRoot(){currTarget=null;document.getElementById('infoForm').reset();document.getElementById('fId').value='';document.getElementById('fRel').value='root';document.getElementById('formHeader').innerText='Tạo Người Khởi Đầu';document.getElementById('imgPrev').style.display='none';tempAva='';openMod('modalForm');}
-    function pickRel(id){currTarget=id;openMod('modalChoice');}
-    function startAdd(rel){closeMod('modalChoice');document.getElementById('infoForm').reset();document.getElementById('fId').value='';document.getElementById('fTarget').value=currTarget;document.getElementById('fRel').value=rel;document.getElementById('imgPrev').style.display='none';tempAva='';const t={parent:'Thêm Cha / Mẹ',spouse:'Thêm Vợ / Chồng',child:'Thêm Con Cái'};document.getElementById('formHeader').innerText=t[rel];openMod('modalForm');}
-    function editNode(id){const n=findN(tree,id);if(!n)return;document.getElementById('infoForm').reset();document.getElementById('fId').value=n.id;document.getElementById('fRel').value='edit';document.getElementById('fName').value=n.name||'';document.getElementById('fGender').value=n.gender||'male';document.getElementById('fYear').value=n.year||'';document.getElementById('fContact').value=n.contact||'';tempAva=n.avatar||'';const p=document.getElementById('imgPrev');if(tempAva){p.src=tempAva;p.style.display='block';}else{p.style.display='none';}document.getElementById('formHeader').innerText='Sửa Thông Tin';openMod('modalForm');}
-    function submitForm(e){
-      e.preventDefault();const id=document.getElementById('fId').value,target=document.getElementById('fTarget').value,rel=document.getElementById('fRel').value,name=document.getElementById('fName').value.trim(),gender=document.getElementById('fGender').value,year=document.getElementById('fYear').value.trim(),contact=document.getElementById('fContact').value.trim();
-      if(rel==='root'){tree={id:'p_'+Date.now(),name,gender,year,contact,avatar:tempAva,children:[]};}
-      else if(rel==='edit'){const n=findN(tree,id);if(n){n.name=name;n.gender=gender;n.year=year;n.contact=contact;if(tempAva)n.avatar=tempAva;}}
-      else if(rel==='parent'){const o=tree;tree={id:'p_'+Date.now(),name,gender,year,contact,avatar:tempAva,children:[o]};}
-      else if(rel==='spouse'){const t=findN(tree,target);if(t)t.spouse={id:'p_'+Date.now(),name,gender,year,contact,avatar:tempAva};}
-      else if(rel==='child'){const t=findN(tree,target);if(t){if(!t.children)t.children=[];t.children.push({id:'p_'+Date.now(),name,gender,year,contact,avatar:tempAva,children:[]});}}
-      closeMod('modalForm');draw();
+
+    function startRoot() {
+      currTarget = null; document.getElementById('infoForm').reset();
+      document.getElementById('fId').value = ''; document.getElementById('fRel').value = 'root';
+      document.getElementById('formHeader').innerText = 'Tạo Người Khởi Đầu';
+      document.getElementById('imgPrev').style.display = 'none'; tempAva = '';
+      openMod('modalForm');
     }
-    function delNode(id){if(!confirm('Xóa người này?'))return;delRec(tree,id);draw();}
-    function delRec(c,id){if(c.spouse&&c.spouse.id===id){delete c.spouse;return true;}if(c.children){const i=c.children.findIndex(x=>x.id===id);if(i!==-1){c.children.splice(i,1);return true;}for(let k of c.children){if(delRec(k,id))return true;}}return false;}
-    function findN(c,id){if(!c)return null;if(c.id===id)return c;if(c.spouse&&c.spouse.id===id)return c.spouse;if(c.children){for(let k of c.children){const r=findN(k,id);if(r)return r;}}return null;}
-    function readImg(e){const f=e.target.files[0];if(f){const rd=new FileReader();rd.onload=function(x){tempAva=x.target.result;const p=document.getElementById('imgPrev');p.src=tempAva;p.style.display='block';};rd.readAsDataURL(f);}}
-    function openMod(id){document.getElementById(id).classList.add('active');}
-    function closeMod(id){document.getElementById(id).classList.remove('active');}
-    function saveData(){localStorage.setItem('f_tree_sec',JSON.stringify(tree));alert('Đã lưu thành công!');}
-    function shareLink(){
-      if(!tree){alert('Chưa có thông tin!');return;}
-      try{
-        const s=btoa(unescape(encodeURIComponent(JSON.stringify(tree))));
-        const u=window.location.origin+window.location.pathname+'?data='+s;
-        navigator.clipboard.writeText(u).then(()=>alert('Đã sao chép link sửa chung! Người nhận cần biết mật khẩu mới mở được.')).catch(()=>prompt('Link:',u));
-      }catch(e){alert('Dữ liệu quá lớn, hãy dùng Xuất File!');}
+    function pickRel(id) { currTarget = id; openMod('modalChoice'); }
+    function startAdd(rel) {
+      closeMod('modalChoice'); document.getElementById('infoForm').reset();
+      document.getElementById('fId').value = ''; document.getElementById('fTarget').value = currTarget;
+      document.getElementById('fRel').value = rel; document.getElementById('imgPrev').style.display = 'none'; tempAva = '';
+      const t = { parent: 'Thêm Cha / Mẹ', spouse: 'Thêm Vợ / Chồng', child: 'Thêm Con Cái' };
+      document.getElementById('formHeader').innerText = t[rel];
+      openMod('modalForm');
     }
-    function exportJSON(){if(!tree)return;const a=document.createElement('a');a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(tree,null,2));a.download="giapha.json";document.body.appendChild(a);a.click();a.remove();}
-    function importJSON(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=function(x){try{tree=JSON.parse(x.target.result);draw();alert('Đã nhập!');}catch(err){alert('Lỗi file!');}};rd.readAsText(f);}
-    function resetAll(){if(confirm('Xóa hết làm lại?')){tree=null;localStorage.removeItem('f_tree_sec');draw();}}
+    function editNode(id) {
+      const n = findN(tree, id); if (!n) return;
+      document.getElementById('infoForm').reset();
+      document.getElementById('fId').value = n.id; document.getElementById('fRel').value = 'edit';
+      document.getElementById('fName').value = n.name || ''; document.getElementById('fGender').value = n.gender || 'male';
+      document.getElementById('fYear').value = n.year || ''; document.getElementById('fContact').value = n.contact || '';
+      tempAva = n.avatar || '';
+      const p = document.getElementById('imgPrev');
+      if (tempAva) { p.src = tempAva; p.style.display = 'block'; } else { p.style.display = 'none'; }
+      document.getElementById('formHeader').innerText = 'Sửa Thông Tin';
+      openMod('modalForm');
+    }
+    function submitForm(e) {
+      e.preventDefault();
+      const id = document.getElementById('fId').value, target = document.getElementById('fTarget').value, rel = document.getElementById('fRel').value;
+      const name = document.getElementById('fName').value.trim(), gender = document.getElementById('fGender').value, year = document.getElementById('fYear').value.trim(), contact = document.getElementById('fContact').value.trim();
+      if (rel === 'root') {
+        tree = { id: 'p_' + Date.now(), name, gender, year, contact, avatar: tempAva, children: [] };
+      } else if (rel === 'edit') {
+        const n = findN(tree, id);
+        if (n) { n.name = name; n.gender = gender; n.year = year; n.contact = contact; if (tempAva) n.avatar = tempAva; }
+      } else if (rel === 'parent') {
+        const o = tree;
+        tree = { id: 'p_' + Date.now(), name, gender, year, contact, avatar: tempAva, children: [o] };
+      } else if (rel === 'spouse') {
+        const t = findN(tree, target);
+        if (t) t.spouse = { id: 'p_' + Date.now(), name, gender, year, contact, avatar: tempAva };
+      } else if (rel === 'child') {
+        const t = findN(tree, target);
+        if (t) {
+          if (!t.children) t.children = [];
+          t.children.push({ id: 'p_' + Date.now(), name, gender, year, contact, avatar: tempAva, children: [] });
+        }
+      }
+      closeMod('modalForm'); draw();
+    }
+    function delNode(id) { if (!confirm('Xóa người này?')) return; delRec(tree, id); draw(); }
+    function delRec(c, id) {
+      if (c.spouse && c.spouse.id === id) { delete c.spouse; return true; }
+      if (c.children) {
+        const i = c.children.findIndex(x => x.id === id);
+        if (i !== -1) { c.children.splice(i, 1); return true; }
+        for (let k of c.children) { if (delRec(k, id)) return true; }
+      }
+      return false;
+    }
+    function findN(c, id) {
+      if (!c) return null;
+      if (c.id === id) return c;
+      if (c.spouse && c.spouse.id === id) return c.spouse;
+      if (c.children) {
+        for (let k of c.children) {
+          const r = findN(k, id);
+          if (r) return r;
+        }
+      }
+      return null;
+    }
+    function readImg(e) {
+      const f = e.target.files[0];
+      if (f) {
+        const rd = new FileReader();
+        rd.onload = function(x) {
+          tempAva = x.target.result;
+          const p = document.getElementById('imgPrev');
+          p.src = tempAva; p.style.display = 'block';
+        };
+        rd.readAsDataURL(f);
+      }
+    }
+    function openMod(id) { document.getElementById(id).classList.add('active'); }
+    function closeMod(id) { document.getElementById(id).classList.remove('active'); }
+    function saveData() { localStorage.setItem('f_tree_sec', JSON.stringify(tree)); alert('Đã lưu thành công!'); }
+    function shareLink() {
+      if (!tree) { alert('Chưa có thông tin!'); return; }
+      try {
+        const s = btoa(unescape(encodeURIComponent(JSON.stringify(tree))));
+        const u = window.location.origin + window.location.pathname + '?data=' + s;
+        navigator.clipboard.writeText(u).then(() => alert('Đã sao chép link sửa chung! Người nhận cần biết mật khẩu mới mở được.')).catch(() => prompt('Link:', u));
+      } catch(e) { alert('Dữ liệu quá lớn, hãy dùng Xuất File!'); }
+    }
+    function exportJSON() {
+      if (!tree) return;
+      const a = document.createElement('a');
+      a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tree, null, 2));
+      a.download = "giapha.json";
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+    function importJSON(e) {
+      const f = e.target.files[0];
+      if (!f) return;
+      const rd = new FileReader();
+      rd.onload = function(x) {
+        try { tree = JSON.parse(x.target.result); draw(); alert('Đã nhập!'); } catch(err) { alert('Lỗi file!'); }
+      };
+      rd.readAsText(f);
+    }
+    function resetAll() {
+      if (confirm('Xóa hết làm lại?')) {
+        tree = null; localStorage.removeItem('f_tree_sec'); draw();
+      }
+    }
   </script>
 </body>
 </html>
