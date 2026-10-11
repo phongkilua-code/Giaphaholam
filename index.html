@@ -2,184 +2,431 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=0.5, minimum-scale=0.1, maximum-scale=3.0, user-scalable=yes">
-  <title>Cây Gia Phả Dòng Họ Lâm</title>
+  <meta name="viewport" content="width=device-width, initial-scale=0.6, minimum-scale=0.1, maximum-scale=3.0, user-scalable=yes">
+  <title>Hệ Thống Quản Lý Gia Phả Trực Tuyến</title>
   <style>
-    :root { --bg:#f8fafc; --card:#fff; --border:#cbd5e1; --text:#0f172a; --muted:#64748b; --primary:#2563eb; --success:#10b981; }
-    * { box-sizing:border-box; margin:0; padding:0; }
-    body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
-    header { background:#fff; border-bottom:1px solid var(--border); padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; z-index:30; }
-    .brand { font-weight:700; font-size:1.05rem; }
-    .top-actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
-    .btn { padding:7px 11px; border-radius:8px; border:1px solid transparent; font-size:0.8rem; font-weight:600; cursor:pointer; font-family:inherit; }
-    .btn-save { background:var(--success); color:#fff; }
-    .btn-share { background:var(--primary); color:#fff; }
-    .btn-sub { background:#f1f5f9; color:#334155; border-color:var(--border); }
-    .btn-del { background:#fee2e2; color:#ef4444; }
-    
-    #canvas {
-      flex:1;
-      overflow:auto;
-      padding:60px 40px;
-      display:flex;
-      justify-content:center;
-      align-items:flex-start;
-      background-image:radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
-      background-size:20px 20px;
-      position:relative;
+    :root {
+      --primary: #1565c0;
+      --primary-light: #e3f2fd;
+      --bg: #f5f7fa;
+      --border: #cfd8dc;
+      --card-bg: #ffffff;
+      --text-main: #263238;
+      --text-sub: #546e7a;
+      --male-color: #0288d1;
+      --female-color: #d81b60;
     }
-
-    .tree-box {
-      transform-origin: top center;
-      display: inline-block;
-      margin: auto;
-      transition: transform 0.15s ease-out;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
-    
-    .zoom-bar {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #ffffff;
-      border: 2px solid var(--primary);
-      border-radius: 30px;
-      padding: 6px 16px;
+    /* Thanh điều hướng phong cách chuyên nghiệp */
+    nav {
+      background: var(--primary);
+      color: #fff;
+      padding: 10px 16px;
       display: flex;
       align-items: center;
-      gap: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.18);
-      z-index: 99;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      z-index: 100;
     }
-    .zoom-btn {
-      width: 36px;
-      height: 36px;
+    .nav-brand {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 7px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+    .btn-save { background: #2e7d32; color: #fff; }
+    .btn-save:hover { background: #1b5e20; }
+    .btn-export { background: #ffffff; color: var(--primary); }
+    .btn-import { background: #0288d1; color: #fff; }
+    .btn-danger { background: #c62828; color: #fff; }
+
+    /* Vùng vẽ cây gia phả */
+    #viewport {
+      flex: 1;
+      overflow: auto;
+      padding: 50px 30px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      background-image: radial-gradient(#cfd8dc 1.2px, transparent 1.2px);
+      background-size: 20px 20px;
+      position: relative;
+    }
+    .tree-wrapper {
+      display: inline-block;
+      margin: auto;
+      transform-origin: top center;
+      transition: transform 0.1s ease-out;
+    }
+
+    /* Đường kẻ nhánh gia phả */
+    .tree, .tree ul {
+      display: flex;
+      justify-content: center;
+      padding-top: 25px;
+      position: relative;
+      list-style-type: none;
+    }
+    .tree li {
+      float: left;
+      text-align: center;
+      list-style-type: none;
+      position: relative;
+      padding: 25px 10px 0 10px;
+    }
+    .tree li::before, .tree li::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 50%;
+      border-top: 2px solid #78909c;
+      width: 50%;
+      height: 25px;
+    }
+    .tree li::after {
+      right: auto;
+      left: 50%;
+      border-left: 2px solid #78909c;
+    }
+    .tree li:only-child::after, .tree li:only-child::before { display: none; }
+    .tree li:only-child { padding-top: 0; }
+    .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
+    .tree li:last-child::before { border-right: 2px solid #78909c; border-radius: 0 8px 0 0; }
+    .tree li:first-child::after { border-radius: 8px 0 0 0; }
+    .tree ul::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      border-left: 2px solid #78909c;
+      width: 0;
+      height: 25px;
+    }
+
+    /* Khối vợ chồng */
+    .couple-node {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+    .ring-connector {
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
-      background: #eff6ff;
-      border: 1px solid var(--border);
-      font-size: 1.2rem;
-      font-weight: bold;
+      background: #fff8e1;
+      border: 1px dashed #ffa000;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    /* Thẻ thành viên kiểu dáng chuẩn form gia phả */
+    .person-card {
+      width: 140px;
+      background: var(--card-bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 8px;
+      text-align: center;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+      cursor: pointer;
+      position: relative;
+    }
+    .person-card.male { border-top: 4px solid var(--male-color); }
+    .person-card.female { border-top: 4px solid var(--female-color); }
+    .avatar-wrapper {
+      width: 60px;
+      height: 60px;
+      border-radius: 4px;
+      margin: 0 auto 6px;
+      overflow: hidden;
+      background: #eceff1;
+      border: 1px solid #b0bec5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .avatar-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .person-name {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--text-main);
+      line-height: 1.2;
+      margin-bottom: 3px;
+    }
+    .person-meta {
+      font-size: 0.72rem;
+      color: var(--text-sub);
+    }
+    .card-actions {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid #eceff1;
+      display: flex;
+      justify-content: space-around;
+    }
+    .action-icon {
+      font-size: 0.8rem;
+      border: none;
+      background: none;
       cursor: pointer;
       color: var(--primary);
     }
-    .zoom-text { font-size: 0.85rem; font-weight: 700; min-width: 50px; text-align: center; }
 
-    .tree, .tree ul { display:flex; justify-content:center; padding-top:24px; position:relative; list-style-type:none; }
-    .tree li { float:left; text-align:center; list-style-type:none; position:relative; padding:24px 12px 10px 12px; }
-    .tree li::before, .tree li::after { content:''; position:absolute; top:0; right:50%; border-top:2px solid #94a3b8; width:50%; height:24px; }
-    .tree li::after { right:auto; left:50%; border-left:2px solid #94a3b8; }
-    .tree li:only-child::after, .tree li:only-child::before { display:none; }
-    .tree li:only-child { padding-top:0; }
-    .tree li:first-child::before, .tree li:last-child::after { border:0 none; }
-    .tree li:last-child::before { border-right:2px solid #94a3b8; border-radius:0 8px 0 0; }
-    .tree li:first-child::after { border-radius:8px 0 0 0; }
-    .tree ul::before { content:''; position:absolute; top:0; left:50%; border-left:2px solid #94a3b8; width:0; height:24px; }
-    .family { display:inline-flex; align-items:center; gap:8px; }
-    .ring { background:#fef3c7; border:1px dashed #d97706; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center; }
-    .card { background:var(--card); border:1.5px solid var(--border); border-radius:12px; padding:10px; width:200px; text-align:left; box-shadow:0 4px 10px rgba(0,0,0,0.03); }
-    .card.male { border-top:4px solid #0284c7; }
-    .card.female { border-top:4px solid #e11d48; }
-    .card-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-    .ava { width:42px; height:42px; border-radius:50%; object-fit:cover; background:#f1f5f9; border:1.5px solid var(--border); flex-shrink:0; }
-    .c-name { font-weight:700; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .c-year { font-size:0.72rem; color:var(--muted); margin-top:2px; }
-    .c-contact { display:inline-block; font-size:0.7rem; padding:2px 6px; border-radius:5px; margin-top:5px; background:#e0f2fe; color:#0284c7; font-weight:600; text-decoration:none; }
-    .card-foot { display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:6px; border-top:1px solid #f1f5f9; }
-    .btn-plus { width:26px; height:26px; border-radius:50%; background:var(--primary); color:#fff; border:none; font-size:1rem; cursor:pointer; }
-    .btn-action { background:none; border:none; font-size:0.72rem; color:var(--muted); cursor:pointer; }
-    .empty { display:flex; align-items:center; justify-content:center; margin:80px auto; }
-    .btn-root { background:var(--primary); color:#fff; border:none; padding:13px 22px; border-radius:12px; font-size:0.95rem; font-weight:700; cursor:pointer; }
-    
-    .modal { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:100; padding:14px; }
-    .modal.active { display:flex; }
-    .modal-card { background:#fff; border-radius:14px; width:100%; max-width:400px; padding:18px; max-height:90vh; overflow-y:auto; }
-    .modal-title { display:flex; justify-content:space-between; font-weight:700; margin-bottom:12px; }
-    .form-item { margin-bottom:10px; }
-    .form-item label { display:block; font-size:0.72rem; font-weight:600; color:var(--muted); margin-bottom:3px; }
-    .form-item input, .form-item select, .form-item textarea { width:100%; padding:8px 10px; border-radius:7px; border:1px solid var(--border); font-family:inherit; font-size:0.85rem; }
-    .choice-list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
-    .choice-item { padding:10px; border-radius:8px; border:1px solid var(--border); background:#f8fafc; text-align:left; cursor:pointer; display:flex; gap:8px; align-items:center; }
-    .choice-parent { background:#fefce8; border-color:#fde047; }
+    /* Bộ công cụ thu phóng nổi */
+    .floating-zoom {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #ffffff;
+      border: 1.5px solid var(--border);
+      border-radius: 30px;
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      z-index: 90;
+    }
+    .zoom-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: #f5f5f5;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    /* Modal form nhập liệu */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 15px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-window {
+      background: #fff;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.78rem; font-weight: 600; margin-bottom: 4px; color: var(--text-sub); }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 0.85rem; outline: none;
+    }
+    .preview-box { width: 70px; height: 70px; border: 1px solid var(--border); margin-top: 6px; border-radius: 6px; object-fit: cover; display: none; }
+    .choice-box { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .choice-btn {
+      padding: 12px; border: 1px solid var(--border); background: #fafafa; border-radius: 8px; cursor: pointer; text-align: left; display: flex; gap: 10px; align-items: center;
+    }
   </style>
 </head>
 <body>
 
-  <header>
-    <div class="brand">🌳 Gia Phả Họ Lâm</div>
-    <div class="top-actions">
-      <button class="btn btn-save" onclick="saveData(true)">💾 LƯU MÁY</button>
-      <button class="btn btn-share" onclick="copyDataCode()">📋 SAO CHÉP MÃ</button>
-      <button class="btn btn-sub" onclick="openImportCodeModal()">📥 DÁN MÃ VÀO</button>
-      <button class="btn btn-sub" onclick="exportJSON()">📁 Xuất Tệp</button>
-      <button class="btn btn-del" onclick="resetAll()">🗑️ Xóa</button>
+  <!-- Thanh menu chính -->
+  <nav>
+    <div class="nav-brand">🌳 CÂY GIA PHẢ TRỰC TUYẾN</div>
+    <div class="nav-actions">
+      <button class="btn btn-save" onclick="saveToIndexedDB(true)">💾 Đã Tự Lưu</button>
+      <button class="btn btn-export" onclick="exportDataFile()">📁 Sao Lưu Tệp (.json)</button>
+      <label class="btn btn-import" style="margin:0;cursor:pointer;">
+        📥 Phục Hồi Dữ Liệu
+        <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importDataFile(event)">
+      </label>
+      <button class="btn btn-danger" onclick="resetDatabase()">🗑️ Làm Mới</button>
     </div>
-  </header>
+  </nav>
 
-  <main id="canvas">
-    <div class="tree-box" id="treeBox"></div>
+  <!-- Màn hình hiển thị cây gia phả -->
+  <main id="viewport">
+    <div class="tree-wrapper" id="treeContainer"></div>
   </main>
 
-  <div class="zoom-bar">
-    <button class="zoom-btn" onclick="adjustZoom(-0.15)">➖</button>
-    <span class="zoom-text" id="zoomVal" onclick="resetZoom()">100%</span>
-    <button class="zoom-btn" onclick="adjustZoom(0.15)">➕</button>
+  <!-- Thanh điều khiển thu nhỏ/phóng to mượt mà -->
+  <div class="floating-zoom">
+    <button class="zoom-btn" onclick="zoom(-0.15)">➖</button>
+    <span id="zoomDisplay" style="font-size:0.85rem;font-weight:700;min-width:48px;text-align:center;">100%</span>
+    <button class="zoom-btn" onclick="zoom(0.15)">➕</button>
+    <button class="btn btn-import" style="padding:4px 8px;font-size:0.75rem;" onclick="resetZoom()">Chuẩn</button>
   </div>
 
-  <!-- Hộp thoại Dán Mã Dữ Liệu -->
-  <div class="modal" id="modalImportCode">
-    <div class="modal-card">
-      <div class="modal-title"><span>Dán Mã Dữ Liệu Gia Phả</span><button onclick="closeMod('modalImportCode')" style="border:none;background:none;font-size:1.1rem;cursor:pointer;">✕</button></div>
-      <p style="font-size:0.75rem; color:#64748b; margin-bottom:8px;">Dán đoạn mã được người thân gửi qua Zalo vào khung dưới đây:</p>
-      <textarea id="importCodeInput" rows="6" placeholder="Dán mã vào đây..."></textarea>
-      <div style="display:flex;gap:8px;margin-top:12px;">
-        <button type="button" class="btn btn-share" style="flex:1;padding:9px;" onclick="applyImportCode()">Nạp Cây Gia Phả</button>
-        <button type="button" class="btn btn-sub" onclick="closeMod('modalImportCode')">Hủy</button>
+  <!-- Hộp thoại chọn mối quan hệ -->
+  <div class="modal-overlay" id="choiceModal">
+    <div class="modal-window">
+      <h3 style="font-size:1.05rem;margin-bottom:12px;">Chọn Quan Hệ Cần Thêm</h3>
+      <div class="choice-box">
+        <button class="choice-btn" onclick="triggerForm('parent')">
+          <span style="font-size:1.5rem;">🧓</span>
+          <div><strong>Thêm Cha / Mẹ (Bậc trên)</strong><div style="font-size:0.75rem;color:#78909c;">Tạo thế hệ đi trước</div></div>
+        </button>
+        <button class="choice-btn" onclick="triggerForm('spouse')">
+          <span style="font-size:1.5rem;">💍</span>
+          <div><strong>Thêm Vợ / Chồng</strong><div style="font-size:0.75rem;color:#78909c;">Nối nhánh ngang hàng</div></div>
+        </button>
+        <button class="choice-btn" onclick="triggerForm('child')">
+          <span style="font-size:1.5rem;">👶</span>
+          <div><strong>Thêm Con Cái (Hậu duệ)</strong><div style="font-size:0.75rem;color:#78909c;">Tạo nhánh đời tiếp theo</div></div>
+        </button>
       </div>
+      <button class="btn" style="width:100%;margin-top:12px;background:#eceff1;" onclick="closeModal('choiceModal')">Đóng</button>
     </div>
   </div>
 
-  <div class="modal" id="modalChoice">
-    <div class="modal-card">
-      <div class="modal-title"><span>Thêm Quan Hệ</span><button onclick="closeMod('modalChoice')" style="border:none;background:none;font-size:1.1rem;cursor:pointer;">✕</button></div>
-      <div class="choice-list">
-        <button class="choice-item choice-parent" onclick="startAdd('parent')"><span style="font-size:1.3rem;">🧓</span><div><strong>Thêm Cha / Mẹ (Chĩa lên trên)</strong><div style="font-size:0.72rem;color:var(--muted);">Đẩy người hiện tại làm con, thêm cha mẹ ở trên</div></div></button>
-        <button class="choice-item" onclick="startAdd('spouse')"><span style="font-size:1.3rem;">💍</span><div><strong>Thêm Vợ / Chồng (Nối ngang)</strong><div style="font-size:0.72rem;color:var(--muted);">Nối cùng hàng ngang</div></div></button>
-        <button class="choice-item" onclick="startAdd('child')"><span style="font-size:1.3rem;">👶</span><div><strong>Thêm Con Cái (Rẽ nhánh xuống)</strong><div style="font-size:0.72rem;color:var(--muted);">Tạo con cháu ở tầng dưới</div></div></button>
-      </div>
-    </div>
-  </div>
+  <!-- Hộp thoại form nhập liệu thông tin -->
+  <div class="modal-overlay" id="formModal">
+    <div class="modal-window">
+      <h3 style="font-size:1.05rem;margin-bottom:12px;" id="modalFormTitle">Thông Tin Thành Viên</h3>
+      <form id="memberForm" onsubmit="handleFormSubmit(event)">
+        <input type="hidden" id="fieldId">
+        <input type="hidden" id="fieldTarget">
+        <input type="hidden" id="fieldRelation">
 
-  <div class="modal" id="modalForm">
-    <div class="modal-card">
-      <div class="modal-title"><span id="formHeader">Thông Tin</span><button onclick="closeMod('modalForm')" style="border:none;background:none;font-size:1.1rem;cursor:pointer;">✕</button></div>
-      <form id="infoForm" onsubmit="submitForm(event)">
-        <input type="hidden" id="fId"><input type="hidden" id="fTarget"><input type="hidden" id="fRel">
-        <div class="form-item"><label>Họ và Tên (*)</label><input type="text" id="fName" placeholder="Nguyễn Văn An" required></div>
-        <div style="display:flex;gap:8px;">
-          <div class="form-item" style="flex:1;"><label>Giới tính</label><select id="fGender"><option value="male">Nam</option><option value="female">Nữ</option></select></div>
-          <div class="form-item" style="flex:1;"><label>Năm sinh</label><input type="text" id="fYear" placeholder="1965"></div>
+        <div class="form-group">
+          <label>Họ và Tên (*)</label>
+          <input type="text" id="fieldName" placeholder="Ví dụ: Lâm Thành Lai" required>
         </div>
-        <div class="form-item"><label>Liên hệ (Zalo / FB)</label><input type="text" id="fContact" placeholder="Số Zalo hoặc link FB"></div>
-        <div class="form-item"><label>Ảnh đại diện (Nén siêu nhẹ)</label><input type="file" id="fImg" accept="image/*" onchange="compressAndPreviewImg(event)"><img id="imgPrev" style="width:36px;height:36px;border-radius:50%;display:none;margin-top:6px;object-fit:cover;"></div>
-        <div style="display:flex;gap:8px;margin-top:12px;"><button type="submit" class="btn btn-share" style="flex:1;padding:9px;">Lưu</button><button type="button" class="btn btn-sub" onclick="closeMod('modalForm')">Hủy</button></div>
+        <div style="display:flex;gap:10px;">
+          <div class="form-group" style="flex:1;">
+            <label>Giới tính</label>
+            <select id="fieldGender">
+              <option value="male">Nam</option>
+              <option value="female">Nữ</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Năm sinh / Trạng thái</label>
+            <input type="text" id="fieldYear" placeholder="Ví dụ: 1960 hoặc Đã mất">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Thông tin liên hệ / Ghi chú</label>
+          <input type="text" id="fieldContact" placeholder="Số điện thoại hoặc tiểu sử vắn tắt">
+        </div>
+        <div class="form-group">
+          <label>Ảnh chân dung (Hỗ trợ lưu trữ trực tiếp IndexedDB)</label>
+          <input type="file" id="fieldAvatar" accept="image/*" onchange="processAvatarUpload(event)">
+          <img id="avatarPreview" class="preview-box">
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button type="submit" class="btn btn-save" style="flex:1;justify-content:center;padding:10px;">Lưu Thông Tin</button>
+          <button type="button" class="btn" style="background:#eceff1;" onclick="closeModal('formModal')">Hủy</button>
+        </div>
       </form>
     </div>
   </div>
 
   <script>
-    // Dữ liệu gốc họ Lâm luôn sẵn sàng hiển thị
-    const baseTree = {
-      id: "lai_01",
+    /* ==========================================================================
+       1. KHỞI TẠO CƠ SỞ DỮ LIỆU INDEXEDDB (LƯU TRỮ HÀNG TRĂM MB KHÔNG LO MẤT)
+       ========================================================================== */
+    const DB_NAME = "GiaPhaDatabase";
+    const DB_VERSION = 1;
+    const STORE_NAME = "FamilyTreeStore";
+    let dbInstance = null;
+
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: "id" });
+          }
+        };
+        request.onsuccess = (e) => {
+          dbInstance = e.target.result;
+          resolve(dbInstance);
+        };
+        request.onerror = (e) => reject("Lỗi mở IndexedDB: " + e.target.error);
+      });
+    }
+
+    async function saveToIndexedDB(showAlert = false) {
+      if (!dbInstance || !familyTreeData) return;
+      return new Promise((resolve, reject) => {
+        const tx = dbInstance.transaction(STORE_NAME, "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+        store.put({ id: "MAIN_TREE_RECORD", data: familyTreeData, updated: Date.now() });
+        tx.oncomplete = () => {
+          if (showAlert) alert("✅ Dữ liệu và hình ảnh đã được lưu an toàn tuyệt đối vào trình duyệt!");
+          resolve(true);
+        };
+        tx.onerror = () => reject("Lỗi lưu dữ liệu!");
+      });
+    }
+
+    async function loadFromIndexedDB() {
+      if (!dbInstance) return null;
+      return new Promise((resolve) => {
+        const tx = dbInstance.transaction(STORE_NAME, "readonly");
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.get("MAIN_TREE_RECORD");
+        req.onsuccess = () => {
+          if (req.result && req.result.data) resolve(req.result.data);
+          else resolve(null);
+        };
+        req.onerror = () => resolve(null);
+      });
+    }
+
+    /* ==========================================================================
+       2. DỮ LIỆU GỐC BAN ĐẦU
+       ========================================================================== */
+    const defaultData = {
+      id: "lai_root",
       name: "Lâm Thành Lai",
       gender: "male",
       year: "Đã mất",
       contact: "",
       avatar: "",
       spouse: {
-        id: "dai_02",
+        id: "dai_spouse",
         name: "Diệp Thị Dai",
         gender: "female",
         year: "Thành viên",
@@ -187,270 +434,307 @@
         avatar: ""
       },
       children: [
-        { id: "co_03", name: "Lâm Thành Cơ", gender: "male", year: "", contact: "", avatar: "", children: [] },
-        { id: "nha_04", name: "Lâm Thành Nhã", gender: "male", year: "Thành viên", contact: "", avatar: "", children: [] }
+        { id: "co_child", name: "Lâm Thành Cơ", gender: "male", year: "", contact: "", avatar: "", children: [] },
+        { id: "nha_child", name: "Lâm Thành Nhã", gender: "male", year: "Thành viên", contact: "", avatar: "", children: [] }
       ]
     };
 
-    let tree = null, currTarget = null, tempAva = '';
-    let scale = 1.0;
-    const STORAGE_KEY = 'giapha_lam_fixed_v4';
+    let familyTreeData = null;
+    let selectedNodeId = null;
+    let tempAvatarBase64 = "";
+    let currentZoom = 1.0;
 
-    function adjustZoom(delta) {
-      scale = Math.min(Math.max(0.15, scale + delta), 2.5);
-      applyZoom();
-    }
-    function resetZoom() {
-      scale = 1.0;
-      applyZoom();
-    }
-    function applyZoom() {
-      document.getElementById('treeBox').style.transform = `scale(${scale})`;
-      document.getElementById('zoomVal').innerText = Math.round(scale * 100) + '%';
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      initTree();
+    /* ==========================================================================
+       3. KHỞI ĐỘNG VÀ VẼ CÂY
+       ========================================================================== */
+    window.addEventListener("DOMContentLoaded", async () => {
+      await openDatabase();
+      familyTreeData = await loadFromIndexedDB();
+      if (!familyTreeData) {
+        familyTreeData = defaultData;
+        await saveToIndexedDB(false);
+      }
+      renderFamilyTree();
     });
 
-    function initTree() {
-      // Đọc từ bộ nhớ máy
-      try {
-        const s = localStorage.getItem(STORAGE_KEY);
-        if (s) { tree = JSON.parse(s); }
-      } catch(e) {}
-
-      // Nếu chưa có, lấy dữ liệu gốc của cụ Lâm Thành Lai
-      if (!tree) {
-        tree = baseTree;
-        saveData(false);
-      }
-      draw();
-    }
-
-    function draw() {
-      const box = document.getElementById('treeBox'); box.innerHTML = '';
-      if (!tree) {
-        box.innerHTML = `<div class="empty"><button class="btn-root" onclick="startRoot()">🌱 + Bấm vào đây để tạo Người Khởi Đầu</button></div>`;
+    function renderFamilyTree() {
+      const container = document.getElementById("treeContainer");
+      container.innerHTML = "";
+      if (!familyTreeData) {
+        container.innerHTML = `<button class="btn btn-save" style="padding:14px 24px;font-size:1rem;" onclick="createRootPerson()">🌱 Bắt đầu tạo Người Khởi Đầu</button>`;
         return;
       }
-      const r = document.createElement('div'); r.className = 'tree';
-      const ul = document.createElement('ul'); ul.appendChild(renderNode(tree));
-      r.appendChild(ul); box.appendChild(r);
-      applyZoom();
+      const treeElem = document.createElement("div");
+      treeElem.className = "tree";
+      const ul = document.createElement("ul");
+      ul.appendChild(buildTreeNode(familyTreeData));
+      treeElem.appendChild(ul);
+      container.appendChild(treeElem);
+      applyZoomTransform();
     }
 
-    function renderNode(n) {
-      const li = document.createElement('li'); const f = document.createElement('div'); f.className = 'family'; f.appendChild(makeCard(n));
-      if (n.spouse) {
-        const rg = document.createElement('div'); rg.className = 'ring'; rg.innerText = '💍';
-        f.appendChild(rg); f.appendChild(makeCard(n.spouse, true));
+    function buildTreeNode(node) {
+      const li = document.createElement("li");
+      const coupleWrap = document.createElement("div");
+      coupleWrap.className = "couple-node";
+
+      // Thẻ chính
+      coupleWrap.appendChild(renderPersonCard(node));
+
+      // Thẻ vợ/chồng nếu có
+      if (node.spouse) {
+        const ring = document.createElement("div");
+        ring.className = "ring-connector";
+        ring.innerHTML = "💍";
+        coupleWrap.appendChild(ring);
+        coupleWrap.appendChild(renderPersonCard(node.spouse, true));
       }
-      li.appendChild(f);
-      if (n.children && n.children.length > 0) {
-        const ul = document.createElement('ul');
-        n.children.forEach(c => ul.appendChild(renderNode(c)));
-        li.appendChild(ul);
+
+      li.appendChild(coupleWrap);
+
+      // Thẻ con cái
+      if (node.children && node.children.length > 0) {
+        const childUl = document.createElement("ul");
+        node.children.forEach(child => childUl.appendChild(buildTreeNode(child)));
+        li.appendChild(childUl);
       }
       return li;
     }
 
-    function makeCard(n, isSpouse = false) {
-      const d = document.createElement('div'); d.className = `card ${n.gender || 'male'}`;
-      const ava = n.avatar || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
-      let cont = n.contact ? `<div class="c-contact">${n.contact}</div>` : '';
-      d.innerHTML = `
-        <div class="card-head">
-          <img class="ava" src="${ava}">
-          <div style="flex:1;overflow:hidden;">
-            <div class="c-name">${n.name}</div>
-            <div class="c-year">${n.year ? n.year : 'Thành viên'}</div>
-            ${cont}
-          </div>
-        </div>
-        <div class="card-foot">
-          <button class="btn-action" onclick="editNode('${n.id}')">✏️ Sửa</button>
-          ${isSpouse || n.id !== tree.id ? `<button class="btn-action" style="color:#ef4444;" onclick="delNode('${n.id}')">Xóa</button>` : ''}
-          <button class="btn-plus" onclick="pickRel('${n.id}')">+</button>
+    function renderPersonCard(person, isSpouse = false) {
+      const card = document.createElement("div");
+      card.className = `person-card ${person.gender || 'male'}`;
+      
+      const defaultAvatar = person.gender === 'female' 
+        ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23d81b60'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"
+        : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230288d1'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+
+      const imgSrc = person.avatar || defaultAvatar;
+
+      card.innerHTML = `
+        <div class="avatar-wrapper"><img src="${imgSrc}"></div>
+        <div class="person-name">${person.name}</div>
+        <div class="person-meta">${person.year || 'Thành viên'}</div>
+        <div class="card-actions">
+          <button class="action-icon" title="Sửa thông tin" onclick="event.stopPropagation();editPerson('${person.id}')">✏️</button>
+          ${isSpouse || person.id !== familyTreeData.id ? `<button class="action-icon" style="color:#c62828;" title="Xóa" onclick="event.stopPropagation();deletePerson('${person.id}')">🗑️</button>` : ''}
+          <button class="action-icon" style="font-size:1.1rem;font-weight:bold;" title="Thêm nhánh" onclick="event.stopPropagation();openChoice('${person.id}')">➕</button>
         </div>
       `;
-      return d;
+      return card;
     }
 
-    function startRoot() {
-      currTarget = null; document.getElementById('infoForm').reset();
-      document.getElementById('fId').value = ''; document.getElementById('fRel').value = 'root';
-      document.getElementById('formHeader').innerText = 'Tạo Người Khởi Đầu';
-      document.getElementById('imgPrev').style.display = 'none'; tempAva = '';
-      openMod('modalForm');
+    /* ==========================================================================
+       4. ĐIỀU KHIỂN FORM VÀ THAO TÁC CÂY
+       ========================================================================== */
+    function createRootPerson() {
+      selectedNodeId = null;
+      document.getElementById("memberForm").reset();
+      document.getElementById("fieldId").value = "";
+      document.getElementById("fieldRelation").value = "root";
+      document.getElementById("modalFormTitle").innerText = "Tạo Người Khởi Đầu";
+      document.getElementById("avatarPreview").style.display = "none";
+      tempAvatarBase64 = "";
+      openModal("formModal");
     }
-    function pickRel(id) { currTarget = id; openMod('modalChoice'); }
-    function startAdd(rel) {
-      closeMod('modalChoice'); document.getElementById('infoForm').reset();
-      document.getElementById('fId').value = ''; document.getElementById('fTarget').value = currTarget;
-      document.getElementById('fRel').value = rel; document.getElementById('imgPrev').style.display = 'none'; tempAva = '';
-      const t = { parent: 'Thêm Cha / Mẹ', spouse: 'Thêm Vợ / Chồng', child: 'Thêm Con Cái' };
-      document.getElementById('formHeader').innerText = t[rel];
-      openMod('modalForm');
+
+    function openChoice(id) {
+      selectedNodeId = id;
+      openModal("choiceModal");
     }
-    function editNode(id) {
-      const n = findN(tree, id); if (!n) return;
-      document.getElementById('infoForm').reset();
-      document.getElementById('fId').value = n.id; document.getElementById('fRel').value = 'edit';
-      document.getElementById('fName').value = n.name || ''; document.getElementById('fGender').value = n.gender || 'male';
-      document.getElementById('fYear').value = n.year || ''; document.getElementById('fContact').value = n.contact || '';
-      tempAva = n.avatar || '';
-      const p = document.getElementById('imgPrev');
-      if (tempAva) { p.src = tempAva; p.style.display = 'block'; } else { p.style.display = 'none'; }
-      document.getElementById('formHeader').innerText = 'Sửa Thông Tin';
-      openMod('modalForm');
+
+    function triggerForm(rel) {
+      closeModal("choiceModal");
+      document.getElementById("memberForm").reset();
+      document.getElementById("fieldId").value = "";
+      document.getElementById("fieldTarget").value = selectedNodeId;
+      document.getElementById("fieldRelation").value = rel;
+      document.getElementById("avatarPreview").style.display = "none";
+      tempAvatarBase64 = "";
+
+      const titleMap = { parent: "Thêm Cha / Mẹ", spouse: "Thêm Vợ / Chồng", child: "Thêm Con Cái" };
+      document.getElementById("modalFormTitle").innerText = titleMap[rel];
+      openModal("formModal");
     }
-    function submitForm(e) {
+
+    function editPerson(id) {
+      const node = findNodeById(familyTreeData, id);
+      if (!node) return;
+      document.getElementById("memberForm").reset();
+      document.getElementById("fieldId").value = node.id;
+      document.getElementById("fieldRelation").value = "edit";
+      document.getElementById("fieldName").value = node.name || "";
+      document.getElementById("fieldGender").value = node.gender || "male";
+      document.getElementById("fieldYear").value = node.year || "";
+      document.getElementById("fieldContact").value = node.contact || "";
+      tempAvatarBase64 = node.avatar || "";
+
+      const prev = document.getElementById("avatarPreview");
+      if (tempAvatarBase64) {
+        prev.src = tempAvatarBase64;
+        prev.style.display = "block";
+      } else {
+        prev.style.display = "none";
+      }
+      document.getElementById("modalFormTitle").innerText = "Chỉnh Sửa Thông Tin";
+      openModal("formModal");
+    }
+
+    async function handleFormSubmit(e) {
       e.preventDefault();
-      const id = document.getElementById('fId').value, target = document.getElementById('fTarget').value, rel = document.getElementById('fRel').value;
-      const name = document.getElementById('fName').value.trim(), gender = document.getElementById('fGender').value, year = document.getElementById('fYear').value.trim(), contact = document.getElementById('fContact').value.trim();
-      if (rel === 'root') {
-        tree = { id: 'p_' + Date.now(), name, gender, year, contact, avatar: tempAva, children: [] };
-      } else if (rel === 'edit') {
-        const n = findN(tree, id);
-        if (n) { n.name = name; n.gender = gender; n.year = year; n.contact = contact; if (tempAva) n.avatar = tempAva; }
-      } else if (rel === 'parent') {
-        const o = tree;
-        tree = { id: 'p_' + Date.now(), name, gender, year, contact, avatar: tempAva, children: [o] };
-      } else if (rel === 'spouse') {
-        const t = findN(tree, target);
-        if (t) t.spouse = { id: 'p_' + Date.now(), name, gender, year, contact, avatar: tempAva };
-      } else if (rel === 'child') {
-        const t = findN(tree, target);
-        if (t) {
-          if (!t.children) t.children = [];
-          t.children.push({ id: 'p_' + Date.now(), name, gender, year, contact, avatar: tempAva, children: [] });
+      const id = document.getElementById("fieldId").value;
+      const targetId = document.getElementById("fieldTarget").value;
+      const rel = document.getElementById("fieldRelation").value;
+      const name = document.getElementById("fieldName").value.trim();
+      const gender = document.getElementById("fieldGender").value;
+      const year = document.getElementById("fieldYear").value.trim();
+      const contact = document.getElementById("fieldContact").value.trim();
+
+      if (rel === "root") {
+        familyTreeData = { id: "p_" + Date.now(), name, gender, year, contact, avatar: tempAvatarBase64, children: [] };
+      } else if (rel === "edit") {
+        const n = findNodeById(familyTreeData, id);
+        if (n) {
+          n.name = name; n.gender = gender; n.year = year; n.contact = contact;
+          if (tempAvatarBase64) n.avatar = tempAvatarBase64;
+        }
+      } else if (rel === "parent") {
+        const oldRoot = familyTreeData;
+        familyTreeData = { id: "p_" + Date.now(), name, gender, year, contact, avatar: tempAvatarBase64, children: [oldRoot] };
+      } else if (rel === "spouse") {
+        const target = findNodeById(familyTreeData, targetId);
+        if (target) target.spouse = { id: "p_" + Date.now(), name, gender, year, contact, avatar: tempAvatarBase64 };
+      } else if (rel === "child") {
+        const target = findNodeById(familyTreeData, targetId);
+        if (target) {
+          if (!target.children) target.children = [];
+          target.children.push({ id: "p_" + Date.now(), name, gender, year, contact, avatar: tempAvatarBase64, children: [] });
         }
       }
-      closeMod('modalForm'); 
-      saveData(false);
-      draw();
+
+      closeModal("formModal");
+      await saveToIndexedDB(false);
+      renderFamilyTree();
     }
-    function delNode(id) { 
-      if (!confirm('Xóa người này?')) return; 
-      delRec(tree, id); 
-      saveData(false); 
-      draw(); 
+
+    async function deletePerson(id) {
+      if (!confirm("Bạn có chắc chắn muốn xóa thành viên này cùng nhánh con liên quan?")) return;
+      deleteRecursive(familyTreeData, id);
+      await saveToIndexedDB(false);
+      renderFamilyTree();
     }
-    function delRec(c, id) {
-      if (c.spouse && c.spouse.id === id) { delete c.spouse; return true; }
-      if (c.children) {
-        const i = c.children.findIndex(x => x.id === id);
-        if (i !== -1) { c.children.splice(i, 1); return true; }
-        for (let k of c.children) { if (delRec(k, id)) return true; }
+
+    function deleteRecursive(root, id) {
+      if (!root) return false;
+      if (root.spouse && root.spouse.id === id) { delete root.spouse; return true; }
+      if (root.children) {
+        const idx = root.children.findIndex(c => c.id === id);
+        if (idx !== -1) { root.children.splice(idx, 1); return true; }
+        for (let ch of root.children) { if (deleteRecursive(ch, id)) return true; }
       }
       return false;
     }
-    function findN(c, id) {
-      if (!c) return null;
-      if (c.id === id) return c;
-      if (c.spouse && c.spouse.id === id) return c.spouse;
-      if (c.children) {
-        for (let k of c.children) {
-          const r = findN(k, id);
-          if (r) return r;
+
+    function findNodeById(node, id) {
+      if (!node) return null;
+      if (node.id === id) return node;
+      if (node.spouse && node.spouse.id === id) return node.spouse;
+      if (node.children) {
+        for (let c of node.children) {
+          const res = findNodeById(c, id);
+          if (res) return res;
         }
       }
       return null;
     }
 
-    function compressAndPreviewImg(e) {
+    // Tối ưu hóa ảnh tải lên trực tiếp vào IndexedDB
+    function processAvatarUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = function(evt) {
+      reader.onload = (evt) => {
         const img = new Image();
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          const maxDim = 120;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const maxDim = 250; // Kích thước sắc nét tiêu chuẩn chân dung
           let w = img.width, h = img.height;
-          if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } }
-          else { if (h > maxDim) { w *= maxDim / h; h = maxDim; } }
+          if (w > h) { if (w > maxDim) { h = (h * maxDim) / w; w = maxDim; } }
+          else { if (h > maxDim) { w = (w * maxDim) / h; h = maxDim; } }
           canvas.width = w; canvas.height = h;
-          const ctx = canvas.getContext('2d');
+          const ctx = canvas.getContext("2d");
           ctx.drawImage(img, 0, 0, w, h);
-          tempAva = canvas.toDataURL('image/jpeg', 0.7);
-          const p = document.getElementById('imgPrev');
-          p.src = tempAva; p.style.display = 'block';
+          tempAvatarBase64 = canvas.toDataURL("image/jpeg", 0.85);
+          const prev = document.getElementById("avatarPreview");
+          prev.src = tempAvatarBase64;
+          prev.style.display = "block";
         };
         img.src = evt.target.result;
       };
       reader.readAsDataURL(file);
     }
 
-    function openMod(id) { document.getElementById(id).classList.add('active'); }
-    function closeMod(id) { document.getElementById(id).classList.remove('active'); }
-    
-    function saveData(showAlert = true) { 
-      if (tree) {
+    /* ==========================================================================
+       5. SAO LƯU & XUẤT NHẬP DỮ LIỆU
+       ========================================================================== */
+    function exportDataFile() {
+      if (!familyTreeData) return;
+      const jsonStr = JSON.stringify(familyTreeData, null, 2);
+      const blob = new Blob([jsonStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `giapha_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importDataFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(tree)); 
-          if (showAlert) alert('✅ Đã lưu dữ liệu vào máy thành công!');
+          const parsed = JSON.parse(evt.target.result);
+          if (parsed && parsed.name) {
+            familyTreeData = parsed;
+            await saveToIndexedDB(false);
+            renderFamilyTree();
+            alert("✅ Phục hồi dữ liệu cây gia phả thành công!");
+          }
         } catch (err) {
-          alert('Bộ nhớ đầy, hãy dùng tính năng Xuất Tệp để lưu!');
+          alert("Lỗi tệp không hợp lệ!");
         }
+      };
+      reader.readAsText(file);
+    }
+
+    async function resetDatabase() {
+      if (confirm("Khôi phục lại cây gia phả về trạng thái mẫu ban đầu?")) {
+        familyTreeData = JSON.parse(JSON.stringify(defaultData));
+        await saveToIndexedDB(false);
+        renderFamilyTree();
       }
     }
 
-    // SAO CHÉP MÃ GIA PHẢ: Gửi qua Zalo an toàn tuyệt đối
-    function copyDataCode() {
-      if (!tree) { alert('Chưa có thông tin!'); return; }
-      try {
-        const code = JSON.stringify(tree);
-        navigator.clipboard.writeText(code).then(() => {
-          alert('✅ ĐÃ SAO CHÉP MÃ DỮ LIỆU!\n\nBạn hãy mở Zalo và dán đoạn mã này gửi cho người thân.\nNgười nhận chỉ cần bấm [📥 DÁN MÃ VÀO] trên web là xem được ngay!');
-        }).catch(() => {
-          prompt('Sao chép toàn bộ mã trong ô này gửi qua Zalo:', code);
-        });
-      } catch(e) {
-        alert('Lỗi sao chép mã!');
-      }
+    /* ==========================================================================
+       6. THU PHÓNG VÀ MODAL
+       ========================================================================== */
+    function zoom(delta) {
+      currentZoom = Math.min(Math.max(0.2, currentZoom + delta), 2.5);
+      applyZoomTransform();
+    }
+    function resetZoom() {
+      currentZoom = 1.0;
+      applyZoomTransform();
+    }
+    function applyZoomTransform() {
+      document.getElementById("treeContainer").style.transform = `scale(${currentZoom})`;
+      document.getElementById("zoomDisplay").innerText = Math.round(currentZoom * 100) + "%";
     }
 
-    function openImportCodeModal() {
-      document.getElementById('importCodeInput').value = '';
-      openMod('modalImportCode');
-    }
-
-    function applyImportCode() {
-      const val = document.getElementById('importCodeInput').value.trim();
-      if (!val) { alert('Vui lòng dán mã dữ liệu vào khung!'); return; }
-      try {
-        const parsed = JSON.parse(val);
-        if (parsed && parsed.name) {
-          tree = parsed;
-          saveData(false);
-          draw();
-          closeMod('modalImportCode');
-          alert('✅ ĐÃ NẠP CÂY GIA PHẢ THÀNH CÔNG!');
-        } else {
-          alert('Mã không hợp lệ!');
-        }
-      } catch(e) {
-        alert('Đoạn mã bị thiếu hoặc dán sai! Vui lòng kiểm tra lại.');
-      }
-    }
-
-    function exportJSON() {
-      if (!tree) return;
-      const a = document.createElement('a');
-      a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tree, null, 2));
-      a.download = "giapha_holam.json";
-      document.body.appendChild(a); a.click(); a.remove();
-    }
-
-    function resetAll() {
-      if (confirm('Khôi phục lại nhánh gốc họ Lâm?')) {
-        tree = JSON.parse(JSON.stringify(baseTree)); 
-        localStorage.removeItem(STORAGE_KEY); 
-        draw();
-      }
-    }
+    function openModal(id) { document.getElementById(id).classList.add("active"); }
+    function closeModal(id) { document.getElementById(id).classList.remove("active"); }
   </script>
 </body>
 </html>
