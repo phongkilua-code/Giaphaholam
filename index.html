@@ -15,7 +15,7 @@
       --male-color: #0288d1;
       --female-color: #d81b60;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
@@ -26,12 +26,15 @@
       overflow: hidden;
     }
 
-    /* Lớp phủ màn hình khóa */
+    /* Màn hình khóa trực tiếp */
     #lockOverlay {
       position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.95);
-      z-index: 99999;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #0f172a;
+      z-index: 999999;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -40,11 +43,11 @@
     .lock-card {
       background: #ffffff;
       border-radius: 18px;
-      padding: 26px 20px;
+      padding: 24px;
       width: 100%;
-      max-width: 330px;
+      max-width: 320px;
       text-align: center;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     }
     .lock-card input {
       width: 100%;
@@ -53,14 +56,10 @@
       border-radius: 10px;
       font-size: 1.1rem;
       text-align: center;
-      margin-bottom: 12px;
+      margin: 12px 0;
       outline: none;
-      font-family: inherit;
     }
-    .lock-card input:focus {
-      border-color: var(--primary);
-    }
-    .btn-unlock {
+    .lock-card button {
       width: 100%;
       padding: 12px;
       background: var(--primary);
@@ -70,11 +69,6 @@
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      display: block;
-    }
-    .btn-unlock:active {
-      background: #0d47a1;
-      transform: scale(0.98);
     }
 
     nav {
@@ -264,16 +258,17 @@
 </head>
 <body>
 
-  <!-- Khóa Mật Mã 123456 có hỗ trợ Enter và Touch Event -->
+  <!-- Khóa Mật Mã: Nhập đúng 123456 là tự động mở tức thì -->
   <div id="lockOverlay">
     <div class="lock-card">
-      <div style="font-size:2.6rem;margin-bottom:8px;">🔒</div>
-      <h3 style="margin-bottom:6px;">Bảo Mật Gia Phả</h3>
-      <p style="font-size:0.8rem;color:#64748b;margin-bottom:14px;">Mật mã: <strong>123456</strong></p>
+      <div style="font-size:2.6rem;margin-bottom:6px;">🔒</div>
+      <h3 style="margin-bottom:4px;">Bảo Mật Gia Phả</h3>
+      <p style="font-size:0.8rem;color:#64748b;">Mật mã: <strong>123456</strong></p>
       
-      <input type="password" id="inputPass" placeholder="Nhập 123456" inputmode="numeric" onkeydown="if(event.key==='Enter') unlockTree();">
-      
-      <button class="btn-unlock" id="btnUnlock" onclick="unlockTree()">MỞ KHÓA</button>
+      <form onsubmit="event.preventDefault(); doUnlock();">
+        <input type="password" id="inputPass" placeholder="Nhập 123456" inputmode="numeric" oninput="checkAutoUnlock(this.value)">
+        <button type="submit" id="btnUnlock">MỞ KHÓA NGAY</button>
+      </form>
       
       <div id="errPass" style="color:#ef4444;font-size:0.8rem;margin-top:10px;display:none;font-weight:600;">Mật khẩu không đúng!</div>
     </div>
@@ -353,4 +348,325 @@
         </div>
 
         <div style="display:flex;gap:8px;margin-top:14px;">
-          <button type="submit" class="btn btn-save" style="
+          <button type="submit" class="btn btn-save" style="flex:1;justify-content:center;padding:9px;" id="btnSubmitForm">Lưu Lên Đám Mây</button>
+          <button type="button" class="btn btn-file" onclick="closeModal('formModal')">Hủy</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const FIREBASE_ENDPOINTS = [
+      "https://giaphaholam-2aa50-default-rtdb.asia-southeast1.firebasedatabase.app/tree.json",
+      "https://giaphaholam-2aa50-default-rtdb.firebaseio.com/tree.json"
+    ];
+    let workingEndpoint = FIREBASE_ENDPOINTS[0];
+
+    const defaultData = {
+      id: "lai_root",
+      name: "Lâm Thành Lai",
+      gender: "male",
+      year: "Đã mất",
+      avatar: "",
+      spouse: {
+        id: "dai_spouse",
+        name: "Diệp Thị Dai",
+        gender: "female",
+        year: "Thành viên",
+        avatar: ""
+      },
+      children: [
+        { id: "co_child", name: "Lâm Thành Cơ", gender: "male", year: "", avatar: "", children: [] },
+        { id: "nha_child", name: "Lâm Thành Nhã", gender: "male", year: "Thành viên", avatar: "", children: [] }
+      ]
+    };
+
+    let familyTreeData = defaultData;
+    let selectedId = null;
+    let tempAvatar = "";
+    let zoomLevel = 1.0;
+
+    // Tự động mở khóa ngay khi gõ đủ 123456
+    function checkAutoUnlock(val) {
+      if (val.trim() === "123456") {
+        doUnlock();
+      }
+    }
+
+    function doUnlock() {
+      const inp = document.getElementById("inputPass");
+      if (inp.value.trim() === "123456") {
+        const overlay = document.getElementById("lockOverlay");
+        overlay.style.setProperty("display", "none", "important");
+        sessionStorage.setItem("tree_unlocked", "yes");
+        loadTreeFromCloud();
+      } else {
+        document.getElementById("errPass").style.display = "block";
+      }
+    }
+
+    async function loadTreeFromCloud() {
+      const status = document.getElementById("cloudStatus");
+      status.innerText = "☁️ Đang đồng bộ...";
+      
+      let success = false;
+      for (let url of FIREBASE_ENDPOINTS) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            workingEndpoint = url;
+            const data = await res.json();
+            if (data && data.name) {
+              familyTreeData = data;
+              status.innerText = "☁️ Đã đồng bộ đám mây";
+            } else {
+              familyTreeData = defaultData;
+              await saveTreeToCloud(false);
+              status.innerText = "☁️ Đã kết nối đám mây";
+            }
+            success = true;
+            break;
+          }
+        } catch (e) {}
+      }
+
+      if (!success) {
+        status.innerText = "⚠️ Dùng dữ liệu dự phòng";
+      }
+      renderTree();
+    }
+
+    async function saveTreeToCloud(notify = true) {
+      const status = document.getElementById("cloudStatus");
+      status.innerText = "☁️ Đang lưu...";
+      try {
+        const res = await fetch(workingEndpoint, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(familyTreeData)
+        });
+        if (!res.ok) throw new Error("Mã lỗi: " + res.status);
+        status.innerText = "☁️ Đã lưu đám mây";
+        if (notify) alert("✅ Dữ liệu và hình ảnh đã lưu thẳng lên đám mây thành công!");
+      } catch (err) {
+        alert("⚠️ Chưa lưu được vào đám mây: " + err.message);
+        status.innerText = "⚠️ Lỗi lưu đám mây";
+      }
+    }
+
+    function refreshFromCloud() {
+      loadTreeFromCloud();
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      renderTree();
+      if (sessionStorage.getItem("tree_unlocked") === "yes") {
+        document.getElementById("lockOverlay").style.setProperty("display", "none", "important");
+        loadTreeFromCloud();
+      } else {
+        setTimeout(() => { document.getElementById("inputPass").focus(); }, 300);
+      }
+    });
+
+    function renderTree() {
+      const container = document.getElementById("treeContainer");
+      container.innerHTML = "";
+      if (!familyTreeData) return;
+      const treeElem = document.createElement("div");
+      treeElem.className = "tree";
+      const ul = document.createElement("ul");
+      ul.appendChild(buildNode(familyTreeData));
+      treeElem.appendChild(ul);
+      container.appendChild(treeElem);
+      applyZoom();
+    }
+
+    function buildNode(node) {
+      const li = document.createElement("li");
+      const couple = document.createElement("div");
+      couple.className = "couple-node";
+
+      couple.appendChild(makeCard(node));
+      if (node.spouse) {
+        const ring = document.createElement("div");
+        ring.className = "ring-connector";
+        ring.innerHTML = "💍";
+        couple.appendChild(ring);
+        couple.appendChild(makeCard(node.spouse, true));
+      }
+      li.appendChild(couple);
+
+      if (node.children && node.children.length > 0) {
+        const cul = document.createElement("ul");
+        node.children.forEach(c => cul.appendChild(buildNode(c)));
+        li.appendChild(cul);
+      }
+      return li;
+    }
+
+    function makeCard(person, isSpouse = false) {
+      const card = document.createElement("div");
+      card.className = `person-card ${person.gender || 'male'}`;
+      const defaultImg = person.gender === 'female'
+        ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23d81b60'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"
+        : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230288d1'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+
+      card.innerHTML = `
+        <div class="avatar-wrapper"><img src="${person.avatar || defaultImg}"></div>
+        <div class="person-name">${person.name}</div>
+        <div class="person-meta">${person.year || 'Thành viên'}</div>
+        <div class="card-actions">
+          <button class="action-icon" onclick="editPerson('${person.id}')">✏️</button>
+          ${isSpouse || person.id !== familyTreeData.id ? `<button class="action-icon" style="color:#ef4444;" onclick="delPerson('${person.id}')">🗑️</button>` : ''}
+          <button class="action-icon" onclick="openChoice('${person.id}')">➕</button>
+        </div>
+      `;
+      return card;
+    }
+
+    function openChoice(id) { selectedId = id; openModal("choiceModal"); }
+    function triggerForm(rel) {
+      closeModal("choiceModal");
+      document.getElementById("memberForm").reset();
+      document.getElementById("fId").value = "";
+      document.getElementById("fTarget").value = selectedId;
+      document.getElementById("fRel").value = rel;
+      document.getElementById("prevImg").style.display = "none";
+      tempAvatar = "";
+      const t = { parent: "Thêm Cha / Mẹ", spouse: "Thêm Vợ / Chồng", child: "Thêm Con Cái" };
+      document.getElementById("modalTitle").innerText = t[rel];
+      openModal("formModal");
+    }
+
+    function editPerson(id) {
+      const n = findNode(familyTreeData, id);
+      if (!n) return;
+      document.getElementById("memberForm").reset();
+      document.getElementById("fId").value = n.id;
+      document.getElementById("fRel").value = "edit";
+      document.getElementById("fName").value = n.name || "";
+      document.getElementById("fGender").value = n.gender || "male";
+      document.getElementById("fYear").value = n.year || "";
+      tempAvatar = n.avatar || "";
+      const p = document.getElementById("prevImg");
+      if (tempAvatar) { p.src = tempAvatar; p.style.display = "block"; } else { p.style.display = "none"; }
+      document.getElementById("modalTitle").innerText = "Chỉnh Sửa Thông Tin";
+      openModal("formModal");
+    }
+
+    async function submitForm(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btnSubmitForm");
+      btn.innerText = "Đang lưu lên đám mây...";
+      btn.disabled = true;
+
+      const id = document.getElementById("fId").value;
+      const targetId = document.getElementById("fTarget").value;
+      const rel = document.getElementById("fRel").value;
+      const name = document.getElementById("fName").value.trim();
+      const gender = document.getElementById("fGender").value;
+      const year = document.getElementById("fYear").value.trim();
+
+      if (rel === "edit") {
+        const n = findNode(familyTreeData, id);
+        if (n) { n.name = name; n.gender = gender; n.year = year; if (tempAvatar) n.avatar = tempAvatar; }
+      } else if (rel === "parent") {
+        const oldRoot = familyTreeData;
+        familyTreeData = { id: "p_" + Date.now(), name, gender, year, avatar: tempAvatar, children: [oldRoot] };
+      } else if (rel === "spouse") {
+        const target = findNode(familyTreeData, targetId);
+        if (target) target.spouse = { id: "p_" + Date.now(), name, gender, year, avatar: tempAvatar };
+      } else if (rel === "child") {
+        const target = findNode(familyTreeData, targetId);
+        if (target) {
+          if (!target.children) target.children = [];
+          target.children.push({ id: "p_" + Date.now(), name, gender, year, avatar: tempAvatar, children: [] });
+        }
+      }
+
+      closeModal("formModal");
+      renderTree();
+      await saveTreeToCloud(true);
+      btn.innerText = "Lưu Lên Đám Mây";
+      btn.disabled = false;
+    }
+
+    async function delPerson(id) {
+      if (!confirm("Xóa thành viên này khỏi đám mây?")) return;
+      delNode(familyTreeData, id);
+      renderTree();
+      await saveTreeToCloud(true);
+    }
+
+    function delNode(root, id) {
+      if (!root) return false;
+      if (root.spouse && root.spouse.id === id) { delete root.spouse; return true; }
+      if (root.children) {
+        const idx = root.children.findIndex(c => c.id === id);
+        if (idx !== -1) { root.children.splice(idx, 1); return true; }
+        for (let ch of root.children) { if (delNode(ch, id)) return true; }
+      }
+      return false;
+    }
+
+    function findNode(node, id) {
+      if (!node) return null;
+      if (node.id === id) return node;
+      if (node.spouse && node.spouse.id === id) return node.spouse;
+      if (node.children) {
+        for (let c of node.children) {
+          const res = findNode(c, id);
+          if (res) return res;
+        }
+      }
+      return null;
+    }
+
+    function uploadAvatar(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const maxDim = 150;
+          let w = img.width, h = img.height;
+          if (w > h) { if (w > maxDim) { h = (h * maxDim) / w; w = maxDim; } }
+          else { if (h > maxDim) { w = (w * maxDim) / h; h = maxDim; } }
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          tempAvatar = canvas.toDataURL("image/jpeg", 0.7);
+          const prev = document.getElementById("prevImg");
+          prev.src = tempAvatar;
+          prev.style.display = "block";
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function exportFile() {
+      if (!familyTreeData) return;
+      const blob = new Blob([JSON.stringify(familyTreeData, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "cay_gia_pha_dam_may.json";
+      a.click();
+    }
+
+    function zoom(delta) {
+      zoomLevel = Math.min(Math.max(0.2, zoomLevel + delta), 2.5);
+      applyZoom();
+    }
+    function applyZoom() {
+      document.getElementById("treeContainer").style.transform = `scale(${zoomLevel})`;
+      document.getElementById("zoomDisplay").innerText = Math.round(zoomLevel * 100) + "%";
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add("active"); }
+    function closeModal(id) { document.getElementById(id).classList.remove("active"); }
+  </script>
+</body>
+</html>
