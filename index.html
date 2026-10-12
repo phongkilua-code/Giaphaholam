@@ -25,7 +25,6 @@
       flex-direction: column;
       overflow: hidden;
     }
-    /* Màn hình khóa mật mã 123456 */
     #lockOverlay {
       position: fixed;
       inset: 0;
@@ -348,7 +347,6 @@
   </div>
 
   <script>
-    // 1. DỮ LIỆU CÂY MẪU CHÍNH THỨC CỐ ĐỊNH BAN ĐẦU
     const defaultData = {
       id: "lai_root",
       name: "Lâm Thành Lai",
@@ -373,7 +371,6 @@
     let tempAvatar = "";
     let zoomLevel = 1.0;
 
-    // 2. MỞ KHÓA MẬT MÃ 123456
     function unlockTree() {
       const pass = document.getElementById("inputPass").value;
       if (pass === "123456") {
@@ -384,8 +381,7 @@
       }
     }
 
-    // 3. HỆ THỐNG LƯU TRỮ INDEXEDDB (KHÔNG LO TRÀN BỘ NHỚ, KHÔNG CẦN LINK DÀI)
-    const DB_NAME = "GiaPhaHoLamDB";
+    const DB_NAME = "GiaPhaHoLamDB_Clean";
     let db;
     function initDB() {
       return new Promise((resolve) => {
@@ -405,7 +401,7 @@
       const tx = db.transaction("treeStore", "readwrite");
       tx.objectStore("treeStore").put({ id: "CURRENT_TREE", data: familyTreeData });
       tx.oncomplete = () => {
-        if (alertUser) alert("✅ Dữ liệu cây và ảnh đã được lưu bền vững trên máy này!");
+        if (alertUser) alert("✅ Dữ liệu cây và hình ảnh đã được tự động lưu bền vững!");
       };
     }
 
@@ -419,7 +415,6 @@
       });
     }
 
-    // 4. KHỞI CHẠY TRANG
     window.addEventListener("DOMContentLoaded", async () => {
       if (sessionStorage.getItem("tree_unlocked") === "yes") {
         document.getElementById("lockOverlay").style.display = "none";
@@ -433,7 +428,6 @@
       renderTree();
     });
 
-    // 5. VẼ CÂY GIA PHẢ
     function renderTree() {
       const container = document.getElementById("treeContainer");
       container.innerHTML = "";
@@ -490,7 +484,6 @@
       return card;
     }
 
-    // 6. THAO TÁC FORM
     function openChoice(id) { selectedId = id; openModal("choiceModal"); }
     function triggerForm(rel) {
       closeModal("choiceModal");
