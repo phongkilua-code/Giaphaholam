@@ -2,201 +2,60 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
-  <title>Cây Gia Phả Dòng Họ Lâm</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gia Phả Dòng Họ Lâm</title>
   <style>
-    :root {
-      --primary: #1565c0;
-      --bg: #f8fafc;
-      --border: #cbd5e1;
-      --card-bg: #ffffff;
-      --male-color: #0288d1;
-      --female-color: #d81b60;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      color: #0f172a;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    nav {
-      background: #ffffff;
-      border-bottom: 1px solid var(--border);
-      padding: 10px 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .nav-brand { font-size: 1rem; font-weight: 700; color: var(--primary); }
-    .status-cloud { font-size: 0.75rem; color: #10b981; font-weight: 600; margin-left: 6px; }
-    .nav-actions { display: flex; gap: 6px; }
-    .btn {
-      padding: 7px 12px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      cursor: pointer;
-      background: #f1f5f9;
-    }
-    .btn-save { background: #2e7d32; color: #fff; border: none; }
+    body { font-family: sans-serif; background: #f1f5f9; margin: 0; padding: 20px; text-align: center; }
+    .header { background: #1565c0; color: white; padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 20px; }
+    .node-wrap { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 30px; }
+    .card { background: white; border: 2px solid #cbd5e1; border-radius: 10px; width: 140px; padding: 12px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .card.male { border-top: 5px solid #0288d1; }
+    .card.female { border-top: 5px solid #d81b60; }
+    .avatar { width: 55px; height: 55px; border-radius: 6px; background: #e2e8f0; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .name { font-weight: bold; font-size: 0.9rem; margin-bottom: 4px; }
+    .meta { font-size: 0.75rem; color: #64748b; }
+    .btn-act { margin-top: 8px; font-size: 0.8rem; background: #f8fafc; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+    .sub-title { font-weight: bold; color: #334155; margin: 20px 0 10px; }
+  </style>
+</head>
+<body>
 
-    #viewport {
-      flex: 1;
-      overflow: auto;
-      padding: 40px 20px;
-      display: flex;
-      justify-content: center;
-      background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
-      background-size: 20px 20px;
-    }
-    .tree-wrapper {
-      display: inline-block;
-      margin: auto;
-      transform-origin: top center;
-    }
-    .tree, .tree ul {
-      display: flex;
-      justify-content: center;
-      padding-top: 25px;
-      position: relative;
-      list-style-type: none;
-    }
-    .tree li {
-      float: left;
-      text-align: center;
-      list-style-type: none;
-      position: relative;
-      padding: 25px 8px 0 8px;
-    }
-    .tree li::before, .tree li::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      right: 50%;
-      border-top: 2px solid #94a3b8;
-      width: 50%;
-      height: 25px;
-    }
-    .tree li::after { right: auto; left: 50%; border-left: 2px solid #94a3b8; }
-    .tree li:only-child::after, .tree li:only-child::before { display: none; }
-    .tree li:only-child { padding-top: 0; }
-    .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
-    .tree li:last-child::before { border-right: 2px solid #94a3b8; border-radius: 0 8px 0 0; }
-    .tree li:first-child::after { border-radius: 8px 0 0 0; }
-    .tree ul::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 50%;
-      border-left: 2px solid #94a3b8;
-      width: 0;
-      height: 25px;
-    }
-    .couple-node { display: inline-flex; align-items: center; gap: 8px; }
-    .ring-connector {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: #fef3c7;
-      border: 1px dashed #d97706;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8rem;
-    }
-    .person-card {
-      width: 135px;
-      background: var(--card-bg);
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 6px;
-      text-align: center;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.05);
-    }
-    .person-card.male { border-top: 4px solid var(--male-color); }
-    .person-card.female { border-top: 4px solid var(--female-color); }
-    .avatar-wrapper {
-      width: 50px;
-      height: 50px;
-      border-radius: 6px;
-      margin: 0 auto 6px;
-      overflow: hidden;
-      background: #f1f5f9;
-      border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .avatar-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-    .person-name { font-weight: 700; font-size: 0.85rem; margin-bottom: 2px; }
-    .person-meta { font-size: 0.72rem; color: #64748b; }
-    .card-actions {
-      margin-top: 6px;
-      padding-top: 6px;
-      border-top: 1px solid #f1f5f9;
-      display: flex;
-      justify-content: space-around;
-    }
-    .action-icon { font-size: 0.85rem; border: none; background: none; cursor: pointer; color: var(--primary); }
+  <div class="header">
+    🌳 CÂY GIA PHẢ DÒNG HỌ LÂM (TRỰC TUYẾN)
+  </div>
 
-    .floating-zoom {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #ffffff;
-      border: 1.5px solid var(--border);
-      border-radius: 30px;
-      padding: 6px 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-      z-index: 90;
-    }
-    .zoom-btn {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      background: #f8fafc;
-      font-size: 1.1rem;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.55);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 15px;
-    }
-    .modal-overlay.active { display: flex; }
-    .modal-window {
-      background: #fff;
-      border-radius: 14px;
-      width: 100%;
-      max-width: 380px;
-      padding: 20px;
-    }
-    .form-group { margin-bottom: 10px; }
-    .form-group label { display: block; font-size: 0.75rem; font-weight: 600; margin-bottom: 3px; color: #64748b; }
-    .form-group input, .form-group select {
-      width: 100%; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 0.85rem; outline: none;
-    }
-    .preview-box { width: 55px; height: 55px; border-radius: 6px; object-fit: cover; display: none; margin-top: 6px; }
-    .choice-box { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-    .choice-btn {
-      padding: 10px; border: 
+  <div class="sub-title">THẾ HỆ ĐẦU TIÊN</div>
+  <div class="node-wrap">
+    <div class="card male">
+      <div class="avatar"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230288d1'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"></div>
+      <div class="name">Lâm Thành Lai</div>
+      <div class="meta">Đã mất</div>
+    </div>
+
+    <div style="display:flex;align-items:center;font-size:1.5rem;">💍</div>
+
+    <div class="card female">
+      <div class="avatar"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23d81b60'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"></div>
+      <div class="name">Diệp Thị Dai</div>
+      <div class="meta">Thành viên</div>
+    </div>
+  </div>
+
+  <div class="sub-title">THẾ HỆ CON CHÁU</div>
+  <div class="node-wrap">
+    <div class="card male">
+      <div class="avatar"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230288d1'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"></div>
+      <div class="name">Lâm Thành Cơ</div>
+      <div class="meta">Con trai</div>
+    </div>
+
+    <div class="card male">
+      <div class="avatar"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230288d1'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"></div>
+      <div class="name">Lâm Thành Nhã</div>
+      <div class="meta">Con trai</div>
+    </div>
+  </div>
+
+</body>
+</html>
