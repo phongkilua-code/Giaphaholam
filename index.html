@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=0.6, minimum-scale=0.1, maximum-scale=3.0, user-scalable=yes">
-  <title>Cây Gia Phả Dòng Họ Lâm</title>
+  <title>Cây Gia Phả Dòng Họ Lâm - Đám Mây</title>
   <style>
     :root {
       --primary: #1565c0;
@@ -75,7 +75,8 @@
       gap: 8px;
       z-index: 100;
     }
-    .nav-brand { font-size: 1.05rem; font-weight: 700; color: var(--primary); }
+    .nav-brand { font-size: 1.05rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 6px; }
+    .status-cloud { font-size: 0.75rem; color: #10b981; font-weight: 600; }
     .nav-actions { display: flex; gap: 6px; flex-wrap: wrap; }
     .btn {
       padding: 7px 12px;
@@ -90,7 +91,6 @@
     }
     .btn-save { background: #2e7d32; color: #fff; }
     .btn-file { background: #f1f5f9; color: #334155; border-color: var(--border); }
-    .btn-del { background: #fee2e2; color: #ef4444; }
 
     #viewport {
       flex: 1;
@@ -251,28 +251,26 @@
 </head>
 <body>
 
-  <!-- Màn hình khóa đúng chuẩn mật mã 123456 -->
+  <!-- Màn hình khóa mật khẩu 123456 -->
   <div id="lockOverlay">
     <div class="lock-card">
       <div style="font-size:2.5rem;margin-bottom:8px;">🔒</div>
       <h3 style="margin-bottom:6px;">Bảo Mật Gia Phả</h3>
-      <p style="font-size:0.8rem;color:#64748b;margin-bottom:14px;">Vui lòng nhập mật mã dòng họ để truy cập</p>
+      <p style="font-size:0.8rem;color:#64748b;margin-bottom:14px;">Nhập mật mã để mở cây gia phả</p>
       <input type="password" id="inputPass" placeholder="Nhập mật mã...">
       <button onclick="unlockTree()">Mở Khóa</button>
-      <div id="errPass" style="color:#ef4444;font-size:0.75rem;margin-top:8px;display:none;">Mật khẩu không chính xác!</div>
+      <div id="errPass" style="color:#ef4444;font-size:0.75rem;margin-top:8px;display:none;">Mật khẩu không đúng!</div>
     </div>
   </div>
 
   <nav>
-    <div class="nav-brand">🌳 Gia Phả Dòng Họ Lâm</div>
+    <div class="nav-brand">
+      🌳 Gia Phả Họ Lâm
+      <span class="status-cloud" id="cloudStatus">☁️ Đang kết nối...</span>
+    </div>
     <div class="nav-actions">
-      <button class="btn btn-save" onclick="saveToDB(true)">💾 Đã Tự Lưu</button>
-      <button class="btn btn-file" onclick="exportFile()">📥 Xuất File Lưu</button>
-      <label class="btn btn-file" style="margin:0;cursor:pointer;">
-        📤 Nhập File
-        <input type="file" id="inpFile" accept=".json" style="display:none;" onchange="importFile(event)">
-      </label>
-      <button class="btn btn-del" onclick="resetDefault()">🗑️ Khôi Phục Gốc</button>
+      <button class="btn btn-save" onclick="refreshFromCloud()">🔄 Tải Lại Từ Đám Mây</button>
+      <button class="btn btn-file" onclick="exportFile()">📥 Xuất Dự Phòng</button>
     </div>
   </nav>
 
@@ -292,15 +290,15 @@
       <div class="choice-box">
         <button class="choice-btn" onclick="triggerForm('parent')">
           <span style="font-size:1.4rem;">🧓</span>
-          <div><strong>Thêm Cha / Mẹ</strong><div style="font-size:0.75rem;color:#64748b;">Đẩy người hiện tại xuống bậc con</div></div>
+          <div><strong>Thêm Cha / Mẹ</strong><div style="font-size:0.75rem;color:#64748b;">Đẩy người hiện tại xuống làm con</div></div>
         </button>
         <button class="choice-btn" onclick="triggerForm('spouse')">
           <span style="font-size:1.4rem;">💍</span>
-          <div><strong>Thêm Vợ / Chồng</strong><div style="font-size:0.75rem;color:#64748b;">Nối ngang cùng hàng</div></div>
+          <div><strong>Thêm Vợ / Chồng</strong><div style="font-size:0.75rem;color:#64748b;">Nối nhánh ngang hàng</div></div>
         </button>
         <button class="choice-btn" onclick="triggerForm('child')">
           <span style="font-size:1.4rem;">👶</span>
-          <div><strong>Thêm Con Cái</strong><div style="font-size:0.75rem;color:#64748b;">Rẽ nhánh xuống tầng dưới</div></div>
+          <div><strong>Thêm Con Cái</strong><div style="font-size:0.75rem;color:#64748b;">Tạo con cháu thế hệ sau</div></div>
         </button>
       </div>
       <button class="btn btn-file" style="width:100%;margin-top:12px;justify-content:center;" onclick="closeModal('choiceModal')">Hủy</button>
@@ -333,13 +331,13 @@
           </div>
         </div>
         <div class="form-group">
-          <label>Ảnh đại diện (Lưu dung lượng lớn bằng IndexedDB)</label>
+          <label>Ảnh đại diện (Tự nén và lưu trực tiếp lên đám mây)</label>
           <input type="file" id="fAvatar" accept="image/*" onchange="uploadAvatar(event)">
           <img id="prevImg" class="preview-box">
         </div>
 
         <div style="display:flex;gap:8px;margin-top:14px;">
-          <button type="submit" class="btn btn-save" style="flex:1;justify-content:center;padding:9px;">Lưu Dữ Liệu</button>
+          <button type="submit" class="btn btn-save" style="flex:1;justify-content:center;padding:9px;" id="btnSubmitForm">Lưu Lên Đám Mây</button>
           <button type="button" class="btn btn-file" onclick="closeModal('formModal')">Hủy</button>
         </div>
       </form>
@@ -347,6 +345,9 @@
   </div>
 
   <script>
+    // ĐƯỜNG DẪN ĐÁM MÂY FIREBASE CỦA BẠN ĐÃ ĐƯỢC CẬP NHẬT CHUẨN XÁC:
+    const FIREBASE_URL = "https://giapha-holam-2aa50-default-rtdb.firebaseio.com/tree.json";
+
     const defaultData = {
       id: "lai_root",
       name: "Lâm Thành Lai",
@@ -376,56 +377,60 @@
       if (pass === "123456") {
         document.getElementById("lockOverlay").style.display = "none";
         sessionStorage.setItem("tree_unlocked", "yes");
+        loadTreeFromCloud();
       } else {
         document.getElementById("errPass").style.display = "block";
       }
     }
 
-    const DB_NAME = "GiaPhaHoLamDB_Clean";
-    let db;
-    function initDB() {
-      return new Promise((resolve) => {
-        const req = indexedDB.open(DB_NAME, 1);
-        req.onupgradeneeded = (e) => {
-          e.target.result.createObjectStore("treeStore", { keyPath: "id" });
-        };
-        req.onsuccess = (e) => {
-          db = e.target.result;
-          resolve();
-        };
-      });
-    }
-
-    function saveToDB(alertUser = false) {
-      if (!db || !familyTreeData) return;
-      const tx = db.transaction("treeStore", "readwrite");
-      tx.objectStore("treeStore").put({ id: "CURRENT_TREE", data: familyTreeData });
-      tx.oncomplete = () => {
-        if (alertUser) alert("✅ Dữ liệu cây và hình ảnh đã được tự động lưu bền vững!");
-      };
-    }
-
-    function loadFromDB() {
-      return new Promise((resolve) => {
-        if (!db) return resolve(null);
-        const tx = db.transaction("treeStore", "readonly");
-        const req = tx.objectStore("treeStore").get("CURRENT_TREE");
-        req.onsuccess = () => resolve(req.result ? req.result.data : null);
-        req.onerror = () => resolve(null);
-      });
-    }
-
-    window.addEventListener("DOMContentLoaded", async () => {
-      if (sessionStorage.getItem("tree_unlocked") === "yes") {
-        document.getElementById("lockOverlay").style.display = "none";
-      }
-      await initDB();
-      familyTreeData = await loadFromDB();
-      if (!familyTreeData) {
-        familyTreeData = defaultData;
-        saveToDB(false);
+    async function loadTreeFromCloud() {
+      const status = document.getElementById("cloudStatus");
+      status.innerText = "☁️ Đang đồng bộ đám mây...";
+      try {
+        const res = await fetch(FIREBASE_URL);
+        const data = await res.json();
+        if (data && data.name) {
+          familyTreeData = data;
+          status.innerText = "☁️ Đã đồng bộ đám mây";
+        } else {
+          familyTreeData = defaultData;
+          await saveTreeToCloud(false);
+          status.innerText = "☁️ Đã kết nối đám mây";
+        }
+      } catch (err) {
+        console.error(err);
+        status.innerText = "⚠️ Dùng dữ liệu dự phòng";
+        if (!familyTreeData) familyTreeData = defaultData;
       }
       renderTree();
+    }
+
+    async function saveTreeToCloud(notify = true) {
+      const status = document.getElementById("cloudStatus");
+      status.innerText = "☁️ Đang lưu lên đám mây...";
+      try {
+        await fetch(FIREBASE_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(familyTreeData)
+        });
+        status.innerText = "☁️ Đã lưu đám mây";
+        if (notify) alert("✅ Dữ liệu và hình ảnh đã lưu thẳng lên đám mây thành công!");
+      } catch (err) {
+        alert("Lỗi kết nối đám mây! Vui lòng kiểm tra quyền truy cập Realtime Database.");
+        status.innerText = "⚠️ Lỗi lưu đám mây";
+      }
+    }
+
+    function refreshFromCloud() {
+      loadTreeFromCloud();
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      if (sessionStorage.getItem("tree_unlocked") === "yes") {
+        document.getElementById("lockOverlay").style.display = "none";
+        loadTreeFromCloud();
+      }
     });
 
     function renderTree() {
@@ -514,8 +519,12 @@
       openModal("formModal");
     }
 
-    function submitForm(e) {
+    async function submitForm(e) {
       e.preventDefault();
+      const btn = document.getElementById("btnSubmitForm");
+      btn.innerText = "Đang lưu lên đám mây...";
+      btn.disabled = true;
+
       const id = document.getElementById("fId").value;
       const targetId = document.getElementById("fTarget").value;
       const rel = document.getElementById("fRel").value;
@@ -539,16 +548,19 @@
           target.children.push({ id: "p_" + Date.now(), name, gender, year, avatar: tempAvatar, children: [] });
         }
       }
+
       closeModal("formModal");
-      saveToDB(false);
       renderTree();
+      await saveTreeToCloud(false);
+      btn.innerText = "Lưu Lên Đám Mây";
+      btn.disabled = false;
     }
 
-    function delPerson(id) {
-      if (!confirm("Xóa thành viên này?")) return;
+    async function delPerson(id) {
+      if (!confirm("Xóa thành viên này khỏi đám mây?")) return;
       delNode(familyTreeData, id);
-      saveToDB(false);
       renderTree();
+      await saveTreeToCloud(false);
     }
 
     function delNode(root, id) {
@@ -583,14 +595,14 @@
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement("canvas");
-          const maxDim = 200;
+          const maxDim = 150;
           let w = img.width, h = img.height;
           if (w > h) { if (w > maxDim) { h = (h * maxDim) / w; w = maxDim; } }
           else { if (h > maxDim) { w = (w * maxDim) / h; h = maxDim; } }
           canvas.width = w; canvas.height = h;
           const ctx = canvas.getContext("2d");
           ctx.drawImage(img, 0, 0, w, h);
-          tempAvatar = canvas.toDataURL("image/jpeg", 0.8);
+          tempAvatar = canvas.toDataURL("image/jpeg", 0.7);
           const prev = document.getElementById("prevImg");
           prev.src = tempAvatar;
           prev.style.display = "block";
@@ -605,34 +617,8 @@
       const blob = new Blob([JSON.stringify(familyTreeData, null, 2)], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = "cay_gia_pha_ho_lam.json";
+      a.download = "cay_gia_pha_dam_may.json";
       a.click();
-    }
-
-    function importFile(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        try {
-          const parsed = JSON.parse(evt.target.result);
-          if (parsed && parsed.name) {
-            familyTreeData = parsed;
-            saveToDB(false);
-            renderTree();
-            alert("✅ Phục hồi dữ liệu thành công!");
-          }
-        } catch(err) { alert("Lỗi đọc file!"); }
-      };
-      reader.readAsText(file);
-    }
-
-    function resetDefault() {
-      if (confirm("Khôi phục lại dữ liệu gốc họ Lâm?")) {
-        familyTreeData = JSON.parse(JSON.stringify(defaultData));
-        saveToDB(false);
-        renderTree();
-      }
     }
 
     function zoom(delta) {
